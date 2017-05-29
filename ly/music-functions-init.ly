@@ -1254,7 +1254,7 @@ parenthesize =
             default-part-combine-mark-state-machine split-list)
         >> #} ))
 
-partcombine =
+partCombine =
 #(define-music-function (chord-range part1 part2)
    ((number-pair? '(0 . 8)) ly:music? ly:music?)
    (_i "Take the music in @var{part1} and @var{part2} and return
@@ -1267,7 +1267,7 @@ that may be combined into a chord or unison.")
     #{ \with { \voiceTwo \override DynamicLineSpanner.direction = #DOWN } #}
     #{ #} ))
 
-partcombineUp =
+partCombineUp =
 #(define-music-function (chord-range part1 part2)
    ((number-pair? '(0 . 8)) ly:music? ly:music?)
    (_i "Take the music in @var{part1} and @var{part2} and typeset so
@@ -1277,7 +1277,7 @@ that they share a staff with stems directed upward.")
     #{ \with { \voiceThree \override DynamicLineSpanner.direction = #UP } #}
     #{ \with { \voiceOne \override DynamicLineSpanner.direction = #UP } #} ))
 
-partcombineDown =
+partCombineDown =
 #(define-music-function (chord-range part1 part2)
    ((number-pair? '(0 . 8)) ly:music? ly:music?)
    (_i "Take the music in @var{part1} and @var{part2} and typeset so

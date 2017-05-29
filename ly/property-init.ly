@@ -406,18 +406,18 @@ palmMute =
 
 %% part combiner
 
-partcombineForce =
+partCombineForce =
 #(define-music-function (type) ((symbol?))
    (_i "Override the part-combiner.")
    (if type (propertySet 'partCombineForced type)
        (propertyUnset 'partCombineForced)))
 
-partcombineApart = \partcombineForce #'apart
-partcombineChords = \partcombineForce #'chords
-partcombineUnisono = \partcombineForce #'unisono
-partcombineSoloI = \partcombineForce #'solo1
-partcombineSoloII = \partcombineForce #'solo2
-partcombineAutomatic = \partcombineForce \default
+partCombineApart = \partCombineForce #'apart
+partCombineChords = \partCombineForce #'chords
+partCombineUnisono = \partCombineForce #'unisono
+partCombineSoloI = \partCombineForce #'solo1
+partCombineSoloII = \partCombineForce #'solo2
+partCombineAutomatic = \partCombineForce \default
 
 
 %% phrasing slurs

@@ -1012,10 +1012,10 @@ Otherwise, return #f."
                   (lambda ()
                     (pretty-print (procedure-source proc))))))))
 
-;;; \partcombine
+;;; \partCombine
 (define-display-method PartCombineMusic (expr)
   (let ((dir (ly:music-property expr 'direction)))
-    (format #f "\\partcombine~a ~a~a~a"
+    (format #f "\\partCombine~a ~a~a~a"
             (cond ((equal? dir UP) "Up")
                   ((equal? dir DOWN) "Down")
                   (else ""))
@@ -1029,7 +1029,7 @@ Otherwise, return #f."
                     (format #f "~a" (music->lily-string ?part))))
 
 (define-extra-display-method ContextSpeccedMusic (expr)
-  "If `expr' is a \\partcombine expression, return \"\\partcombine ...\".
+  "If `expr' is a \\partCombine expression, return \"\\partCombine ...\".
 Otherwise, return #f."
   (with-music-match
    (expr (music 'ContextSpeccedMusic
