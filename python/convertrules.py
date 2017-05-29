@@ -3926,6 +3926,11 @@ def conv (str):
     str = re.sub (automatic, r"\1output-attributes.id", str)
     return str
 
+@rule ((2, 1, 62), "syntax change \\partcombine -> \\partCombine")
+def conv(str):
+    str = re.sub (r"\\partcombine", r"\\partCombine", str)
+    return str
+
 # Guidelines to write rules (please keep this at the end of this file)
 #
 # - keep at most one rule per version; if several conversions should be done,
