@@ -36,7 +36,10 @@ Entry point for the parser."
          (explicit-11 #f)
          (explicit-2/4 #f)
          (omit-3 #f)
-         (start-additions #t))
+         (start-additions #t)
+         ;; ADDED
+         (degrees (list 'root 'third-major 'fifth-perfect)))
+         
 
     (define (interpret-inversion chord mods)
       "Read /FOO part.  Side effect: INVERSION is set."
@@ -72,8 +75,7 @@ Entry point for the parser."
       (cond ((null? mods) chord)
             ((ly:pitch? (car mods))
              (case (pitch-step (car mods))
-               ((11) (set! explicit-11 #t))
-               ((2 4) (set! explicit-2/4 #t))
+               ((11) (set! explicit-11 #t))               ((2 4) (set! explicit-2/4 #t))
                ((3) (set! omit-3 #f)))
              (interpret-additions (cons (car mods) (remove-step (pitch-step (car mods)) chord))
                                   (cdr mods)))
@@ -117,6 +119,7 @@ the bass specified.
         (if inversion
             (cons down-inversion rest-of-chord)
             rest-of-chord)))
+    ;; BEGINNING OF FUNCTION
     ;; root is always one octave too low.
     ;; something weird happens when this is removed,
     ;; every other chord is octavated. --hwn... hmmm.
@@ -144,8 +147,9 @@ the bass specified.
                 (stack-thirds (car flat-mods) the-canonical-chord))
           (set! flat-mods (cdr flat-mods))))
     ;; apply modifier
-    (if (procedure? lead-mod)
-        (set! base-chord (lead-mod base-chord)))
+    (if (procedure? lead-mod) ;; ADDED second argument to lead-mod procedure
+        (begin (set! base-chord (car (lead-mod base-chord degrees)))
+               (set! degrees (cdr (lead-mod base-chord degrees)))))
     (set! complete-chord
           (if start-additions
               (interpret-additions base-chord flat-mods)
@@ -175,30 +179,43 @@ the bass specified.
         (set! complete-chord (process-inversion complete-chord)))
     (if bass
         (set! bass (pitch-octavated-strictly-below bass root)))
-    (if #f
+    ;; DEBUG STATEMENT
+    (if #t
         (begin
           (write-me "\n*******\n" flat-mods)
           (write-me "root: " root)
           (write-me "base chord: " base-chord)
           (write-me "complete chord: " complete-chord)
           (write-me "inversion: " inversion)
-          (write-me "bass: " bass)))
+          (write-me "bass: " bass)
+          (write-me "lead-mod: " lead-mod)))
     (if inversion
         (make-chord-elements (cdr complete-chord) bass duration (car complete-chord)
-                             inversion)
-        (make-chord-elements complete-chord bass duration #f #f))))
+                             inversion degrees)
+        (make-chord-elements complete-chord bass duration #f #f degrees))))
 
 
-(define (make-chord-elements pitches bass duration inversion original-inv-pitch)
+(define (make-chord-elements pitches bass duration inversion original-inv-pitch degrees)
   "Make EventChord with notes corresponding to PITCHES, BASS and
 DURATION, and INVERSION.  Notes above INVERSION are transposed downward
 along with the inversion as long as they end up below at least one
 non-inverted note."
+  ;; ADDED
+  (define degree #f)
+
   (define (make-note-ev pitch . rest)
+    ;; ADDED
+    (set! degree (car degrees))
+    (set! degrees (cdr degrees))
+    
     (apply make-music 'NoteEvent
+           'chord-degree degree
            'duration duration
            'pitch pitch
            rest))
+  ;; ADDED DEBUG STATEMENT
+  ;;(newline) (display "INVERSION: ") (display inversion) (newline)
+  
   (cond (inversion
          (let* ((octavation (- (ly:pitch-octave inversion)
                                (ly:pitch-octave original-inv-pitch)))
@@ -226,29 +243,47 @@ non-inverted note."
                                            (map make-note-ev rest)))))))
         (bass (cons (make-note-ev bass 'bass #t)
                     (map make-note-ev pitches)))
-        (else (map make-note-ev pitches))))
+        (else
+         (begin
+           (map make-note-ev pitches)))))
 
 ;;;;;;;;;;;;;;;;
 ;; chord modifiers change the pitch list.
 
-(define (aug-modifier pitches)
+;; ADDED second argument to modifiers procedures
+
+(define (aug-modifier pitches degrees)
+  ;; ADDED
+  (set! degrees (list 'root 'third-major 'fifth-sharp))
+  
   (set! pitches (replace-step (ly:make-pitch 0 4 SHARP) pitches))
-  (replace-step (ly:make-pitch 0 2 0) pitches))
+  (cons (replace-step (ly:make-pitch 0 2 0) pitches) degrees))
 
-(define (minor-modifier pitches)
-  (replace-step (ly:make-pitch 0 2 FLAT) pitches))
+(define (minor-modifier pitches degrees)
+  ;; ADDED
+  (set! degrees (list 'root 'third-minor 'fifth-perfect))
+  
+  (cons (replace-step (ly:make-pitch 0 2 FLAT) pitches) degrees))
 
-(define (maj7-modifier pitches)
+(define (maj7-modifier pitches degrees)
+  ;; ADDED
+  (set! degrees (list 'root 'third-major 'fifth-perfect 'seventh-major))
+  
   (set! pitches (remove-step 7 pitches))
-  (cons (ly:make-pitch 0 6 0) pitches))
+  (cons (cons (ly:make-pitch 0 6 0) pitches) degrees))
 
-(define (dim-modifier pitches)
+(define (dim-modifier pitches degrees)
+  ;; ADDED
+  (set! degrees (list 'root 'third-minor 'fifth-dim))
+  
   (set! pitches (replace-step (ly:make-pitch 0 2 FLAT) pitches))
   (set! pitches (replace-step (ly:make-pitch 0 4 FLAT) pitches))
   (set! pitches (replace-step (ly:make-pitch 0 6 DOUBLE-FLAT) pitches))
-  pitches)
+  (cons pitches degrees))
 
 (define (sus-modifier pitches)
+  ;; TODO: add modifiers
+  
   (remove-step (pitch-step (ly:make-pitch 0 2 0)) pitches))
 
 (define-safe-public default-chord-modifier-list
@@ -279,3 +314,4 @@ UPPER-STEP separately."
         ((<= (ly:pitch-steps upper-step) (ly:pitch-steps (car base)))
          (list upper-step))
         (else '())))
+    

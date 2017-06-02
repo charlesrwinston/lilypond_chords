@@ -66,6 +66,8 @@ TODO: Use SpanEvents?")
 cautionary accidental.")
      (change-to-id ,string? "Name of the context to change to.")
      (change-to-type ,symbol? "Type of the context to change to.")
+     ;; ADDED
+     (chord-degree ,symbol? "A note's degree in a chord, used for semantic value of chord.")
      (class ,symbol? "The class name of an event class.")
      (context ,ly:context? "The context to which an event is sent.")
      (context-change-list ,list? "Context changes for @code{\\autochange} or @code{\\partCombine}.")
