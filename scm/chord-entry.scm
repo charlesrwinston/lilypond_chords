@@ -276,18 +276,20 @@ non-inverted note."
   (cons (cons (ly:make-pitch 0 6 0) 7) pitches))
 
 (define (dim-modifier pitches)
+  ;; ORIG
+  ;;(set! pitches (replace-step (ly:make-pitch 0 2 FLAT) pitches))
+  ;;(set! pitches (replace-step (ly:make-pitch 0 4 FLAT) pitches))
+  ;;(set! pitches (replace-step (ly:make-pitch 0 6 DOUBLE-FLAT) pitches))
+  ;;pitches)
+
   ;; ADDED
-  ;;(set! degrees (list 'root 'third-minor 'fifth-dim))
-  
-  (set! pitches (replace-step (ly:make-pitch 0 2 FLAT) pitches))
-  (set! pitches (replace-step (ly:make-pitch 0 4 FLAT) pitches))
-  (set! pitches (replace-step (ly:make-pitch 0 6 DOUBLE-FLAT) pitches))
+  (set! pitches (replace-step (cons (ly:make-pitch 0 2 FLAT) 3) pitches))
+  (set! pitches (replace-step (cons (ly:make-pitch 0 4 FLAT) 5) pitches))
+  (set! pitches (replace-step (cons (ly:make-pitch 0 6 DOUBLE-FLAT) 7) pitches))
   pitches)
-  ;;(cons pitches degrees))
 
 (define (sus-modifier pitches)
-  ;; TODO: add modifiers
-  
+  ;; NO NEED TO CHANGE
   (remove-step (pitch-step (ly:make-pitch 0 2 0)) pitches))
 
 (define-safe-public default-chord-modifier-list
