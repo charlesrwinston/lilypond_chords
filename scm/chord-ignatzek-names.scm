@@ -47,21 +47,25 @@
           (car ps)
           (get-step x (cdr ps)))))
 
+;; ADDED changes. Pitches is now a list of pairs.
 (define (replace-step p ps)
   "Copy PS, but replace the step of P in PS."
   (if (null? ps)
       '()
       (let* ((t (replace-step p (cdr ps))))
-        (if (= (ly:pitch-steps p) (ly:pitch-steps (car ps)))
+        ;;(if (= (ly:pitch-steps p) (ly:pitch-steps (car ps)))
+        (if (= (ly:pitch-steps (car p)) (ly:pitch-steps (car (car ps))))
             (cons p t)
             (cons (car ps) t)))))
 
+;; ADDED changes. Pitches is now a list of pairs.
 (define (remove-step x ps)
   "Copy PS, but leave out the Xth step."
   (if (null? ps)
       '()
       (let* ((t (remove-step x (cdr ps))))
-        (if (= (- x 1) (ly:pitch-steps (car ps)))
+        ;;(if (= (- x 1) (ly:pitch-steps (car ps)))
+        (if (= (- x 1) (ly:pitch-steps (car (car ps))))
             t
             (cons (car ps) t)))))
 

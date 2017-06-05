@@ -139,7 +139,8 @@ the bass specified.
              (ly:pitch?  (car flat-mods))
              (not (eq? lead-mod sus-modifier)))
         (begin
-          (newline) (display "PITCH: ")(display (car flat-mods)) (newline)
+          ;; ADDED: DEBUG
+          ;; (newline) (display "PITCH: ")(display (car flat-mods)) (newline)
           (cond ((= (pitch-step (car flat-mods)) 11)
                  (set! explicit-11 #t))
                 ((equal? (ly:make-pitch 0 4 0) (car flat-mods))
@@ -147,11 +148,17 @@ the bass specified.
           (set! base-chord
                 (stack-thirds (car flat-mods) the-canonical-chord))
           (set! flat-mods (cdr flat-mods))))
+    
+    ;; ADDED DEBUG
+    (newline) (display "BASE-CHORD: ") (display base-chord) (newline)
+    
     ;; apply modifier
-    (if (procedure? lead-mod) ;; ADDED second argument to lead-mod procedure
-        (begin (set! base-chord (lead-mod base-chord))
-               ;;(set! degrees (cdr (lead-mod base-chord #|degrees|#)))
-               ))
+    (if (procedure? lead-mod)
+        (begin (set! base-chord (lead-mod base-chord))))
+    
+    ;; ADDED DEBUG
+    (newline) (display "BASE-CHORD-2: ") (display base-chord) (newline)
+    
     (set! complete-chord
           (if start-additions
               (interpret-additions base-chord flat-mods)
@@ -202,22 +209,11 @@ the bass specified.
 DURATION, and INVERSION.  Notes above INVERSION are transposed downward
 along with the inversion as long as they end up below at least one
 non-inverted note."
-  ;; ADDED
-  ;;(define degree #f)
-
   (define (make-note-ev pitch . rest)
-    ;; ADDED
-    ;;(set! degree (car degrees))
-    ;;(set! degrees (cdr degrees))
-    
     (apply make-music 'NoteEvent
-           ;;'chord-degree degree
            'duration duration
            'pitch pitch
            rest))
-  ;; ADDED DEBUG STATEMENT
-  ;;(newline) (display "INVERSION: ") (display inversion) (newline)
-  
   (cond (inversion
          (let* ((octavation (- (ly:pitch-octave inversion)
                                (ly:pitch-octave original-inv-pitch)))
@@ -255,27 +251,29 @@ non-inverted note."
 ;; ADDED second argument to modifiers procedures
 
 (define (aug-modifier pitches)
+  ;; ORIG
+  ;;(set! pitches (replace-step (ly:make-pitch 0 4 SHARP) pitches))
+  ;;(replace-step (ly:make-pitch 0 2 0) pitches))
+
   ;; ADDED
-  ;;(set! degrees (list 'root 'third-major 'fifth-sharp))
-  
-  (set! pitches (replace-step (ly:make-pitch 0 4 SHARP) pitches))
-  (replace-step (ly:make-pitch 0 2 0) pitches))
-  ;;(cons (replace-step (ly:make-pitch 0 2 0) pitches) degrees))
+  (set! pitches (replace-step (cons (ly:make-pitch 0 4 SHARP) 5) pitches))
+  (replace-step (cons (ly:make-pitch 0 2 0) 3) pitches))
 
 (define (minor-modifier pitches)
-  ;; ADDED
-  ;;(set! degrees (list 'root 'third-minor 'fifth-perfect))
+  ;; ORIG
+  ;;(replace-step (ly:make-pitch 0 2 FLAT) pitches))
 
-  (replace-step (ly:make-pitch 0 2 FLAT) pitches))
-  ;;(cons (replace-step (ly:make-pitch 0 2 FLAT) pitches) degrees))
+  ;; ADDED
+  (replace-step (cons (ly:make-pitch 0 2 FLAT) 3) pitches))
 
 (define (maj7-modifier pitches)
+  ;; ORIG
+  ;;(set! pitches (remove-step 7 pitches))
+  ;;(cons (ly:make-pitch 0 6 0) pitches))
+
   ;; ADDED
-  ;;(set! degrees (list 'root 'third-major 'fifth-perfect 'seventh-major))
-  
   (set! pitches (remove-step 7 pitches))
-  (cons (ly:make-pitch 0 6 0) pitches))
-  ;;(cons (cons (ly:make-pitch 0 6 0) pitches) degrees))
+  (cons (cons (ly:make-pitch 0 6 0) 7) pitches))
 
 (define (dim-modifier pitches)
   ;; ADDED
@@ -284,7 +282,7 @@ non-inverted note."
   (set! pitches (replace-step (ly:make-pitch 0 2 FLAT) pitches))
   (set! pitches (replace-step (ly:make-pitch 0 4 FLAT) pitches))
   (set! pitches (replace-step (ly:make-pitch 0 6 DOUBLE-FLAT) pitches))
-  (pitches))
+  pitches)
   ;;(cons pitches degrees))
 
 (define (sus-modifier pitches)
@@ -305,19 +303,28 @@ non-inverted note."
   (map (lambda (n)
          (define (nca x)
            (if (= x 7) FLAT 0))
-
+         ;; ADDED
          (if (>= n 8)
-             (ly:make-pitch 1 (- n 8) (nca n))
-             (ly:make-pitch 0 (- n 1) (nca n))))
+             ;;(ly:make-pitch 1 (- n 8) (nca n))
+             (cons (ly:make-pitch 1 (- n 8) (nca n)) n)
+             ;;(ly:make-pitch 0 (- n 1) (nca n))))
+             (cons (ly:make-pitch 0 (- n 1) (nca n)) n)))
        '(1 3 5 7 9 11 13)))
 
 (define (stack-thirds upper-step base)
   "Stack thirds listed in BASE until we reach UPPER-STEP.  Add
 UPPER-STEP separately."
+  ;; ADDED DEBUG
+  (newline) (display "BASE: ") (display base) (newline)
   (cond ((null? base) '())
-        ((> (ly:pitch-steps upper-step) (ly:pitch-steps (car base)))
+        ;; ADDED
+        ;;((> (ly:pitch-steps upper-step) (ly:pitch-steps (car base)))
+        ;;  (cons (car base) (stack-thirds upper-step (cdr base))))
+        ((> (ly:pitch-steps upper-step) (ly:pitch-steps (car (car base))))
          (cons (car base) (stack-thirds upper-step (cdr base))))
-        ((<= (ly:pitch-steps upper-step) (ly:pitch-steps (car base)))
-         (list upper-step))
+        ;;((<= (ly:pitch-steps upper-step) (ly:pitch-steps (car base)))
+        ;; (list upper-step))
+        ((<= (ly:pitch-steps upper-step) (ly:pitch-steps (car (car base))))
+         (list (cons upper-step  (cdr (car base)))))
         (else '())))
     
