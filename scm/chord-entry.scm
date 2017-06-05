@@ -36,9 +36,9 @@ Entry point for the parser."
          (explicit-11 #f)
          (explicit-2/4 #f)
          (omit-3 #f)
-         (start-additions #t)
+         (start-additions #t))
          ;; ADDED
-         (degrees (list 'root 'third-major 'fifth-perfect)))
+         ;;(degrees (list 'root 'third-major 'fifth-perfect)))
          
 
     (define (interpret-inversion chord mods)
@@ -139,6 +139,7 @@ the bass specified.
              (ly:pitch?  (car flat-mods))
              (not (eq? lead-mod sus-modifier)))
         (begin
+          (newline) (display "PITCH: ")(display (car flat-mods)) (newline)
           (cond ((= (pitch-step (car flat-mods)) 11)
                  (set! explicit-11 #t))
                 ((equal? (ly:make-pitch 0 4 0) (car flat-mods))
@@ -148,8 +149,9 @@ the bass specified.
           (set! flat-mods (cdr flat-mods))))
     ;; apply modifier
     (if (procedure? lead-mod) ;; ADDED second argument to lead-mod procedure
-        (begin (set! base-chord (car (lead-mod base-chord degrees)))
-               (set! degrees (cdr (lead-mod base-chord degrees)))))
+        (begin (set! base-chord (lead-mod base-chord))
+               ;;(set! degrees (cdr (lead-mod base-chord #|degrees|#)))
+               ))
     (set! complete-chord
           (if start-additions
               (interpret-additions base-chord flat-mods)
@@ -191,25 +193,25 @@ the bass specified.
           (write-me "lead-mod: " lead-mod)))
     (if inversion
         (make-chord-elements (cdr complete-chord) bass duration (car complete-chord)
-                             inversion degrees)
-        (make-chord-elements complete-chord bass duration #f #f degrees))))
+                             inversion)
+        (make-chord-elements complete-chord bass duration #f #f))))
 
 
-(define (make-chord-elements pitches bass duration inversion original-inv-pitch degrees)
+(define (make-chord-elements pitches bass duration inversion original-inv-pitch)
   "Make EventChord with notes corresponding to PITCHES, BASS and
 DURATION, and INVERSION.  Notes above INVERSION are transposed downward
 along with the inversion as long as they end up below at least one
 non-inverted note."
   ;; ADDED
-  (define degree #f)
+  ;;(define degree #f)
 
   (define (make-note-ev pitch . rest)
     ;; ADDED
-    (set! degree (car degrees))
-    (set! degrees (cdr degrees))
+    ;;(set! degree (car degrees))
+    ;;(set! degrees (cdr degrees))
     
     (apply make-music 'NoteEvent
-           'chord-degree degree
+           ;;'chord-degree degree
            'duration duration
            'pitch pitch
            rest))
@@ -252,34 +254,38 @@ non-inverted note."
 
 ;; ADDED second argument to modifiers procedures
 
-(define (aug-modifier pitches degrees)
+(define (aug-modifier pitches)
   ;; ADDED
-  (set! degrees (list 'root 'third-major 'fifth-sharp))
+  ;;(set! degrees (list 'root 'third-major 'fifth-sharp))
   
   (set! pitches (replace-step (ly:make-pitch 0 4 SHARP) pitches))
-  (cons (replace-step (ly:make-pitch 0 2 0) pitches) degrees))
+  (replace-step (ly:make-pitch 0 2 0) pitches))
+  ;;(cons (replace-step (ly:make-pitch 0 2 0) pitches) degrees))
 
-(define (minor-modifier pitches degrees)
+(define (minor-modifier pitches)
   ;; ADDED
-  (set! degrees (list 'root 'third-minor 'fifth-perfect))
-  
-  (cons (replace-step (ly:make-pitch 0 2 FLAT) pitches) degrees))
+  ;;(set! degrees (list 'root 'third-minor 'fifth-perfect))
 
-(define (maj7-modifier pitches degrees)
+  (replace-step (ly:make-pitch 0 2 FLAT) pitches))
+  ;;(cons (replace-step (ly:make-pitch 0 2 FLAT) pitches) degrees))
+
+(define (maj7-modifier pitches)
   ;; ADDED
-  (set! degrees (list 'root 'third-major 'fifth-perfect 'seventh-major))
+  ;;(set! degrees (list 'root 'third-major 'fifth-perfect 'seventh-major))
   
   (set! pitches (remove-step 7 pitches))
-  (cons (cons (ly:make-pitch 0 6 0) pitches) degrees))
+  (cons (ly:make-pitch 0 6 0) pitches))
+  ;;(cons (cons (ly:make-pitch 0 6 0) pitches) degrees))
 
-(define (dim-modifier pitches degrees)
+(define (dim-modifier pitches)
   ;; ADDED
-  (set! degrees (list 'root 'third-minor 'fifth-dim))
+  ;;(set! degrees (list 'root 'third-minor 'fifth-dim))
   
   (set! pitches (replace-step (ly:make-pitch 0 2 FLAT) pitches))
   (set! pitches (replace-step (ly:make-pitch 0 4 FLAT) pitches))
   (set! pitches (replace-step (ly:make-pitch 0 6 DOUBLE-FLAT) pitches))
-  (cons pitches degrees))
+  (pitches))
+  ;;(cons pitches degrees))
 
 (define (sus-modifier pitches)
   ;; TODO: add modifiers
