@@ -76,10 +76,6 @@ Entry point for the parser."
                ((11) (set! explicit-11 #t))
                ((2 4) (set! explicit-2/4 #t))
                ((3) (set! omit-3 #f)))
-             ;;(interpret-additions (cons (car mods) (remove-step (pitch-step (car mods)) chord))
-             ;;                     (cdr mods)))
-
-             ;; ADDED
              (interpret-additions (cons (cons (car mods) (pitch-step (car mods)))
                                         (remove-step (pitch-step (car mods)) chord))
                                   (cdr mods)))
@@ -124,7 +120,7 @@ the bass specified.
         (if inversion
             (cons down-inversion rest-of-chord)
             rest-of-chord)))
-    ;; BEGINNING OF FUNCTION
+    ;; BEGINNING OF MAIN FUNCTION
     ;; root is always one octave too low.
     ;; something weird happens when this is removed,
     ;; every other chord is octavated. --hwn... hmmm.
@@ -161,9 +157,8 @@ the bass specified.
     ;; if sus has been given neither 2 or 4, we add 4.
     (if (and (eq? lead-mod sus-modifier)
              (not explicit-2/4))
-        ;; ADDED
         (set! complete-chord (cons (cons (ly:make-pitch 0 4 0) 4) complete-chord)))
-    ;; sort the notes in the chord -- ADDED chord-degree<? procedure
+    ;; sort the notes in the chord
     (set! complete-chord (sort complete-chord chord-degree<?))
     ;; If natural 11 + natural 3 is present, but not given explicitly,
     ;; we remove the 11.
@@ -251,45 +246,23 @@ non-inverted note."
 ;; chord modifiers change the pitch list.
 
 (define (aug-modifier pitches)
-  ;; ORIG
-  ;;(set! pitches (replace-step (ly:make-pitch 0 4 SHARP) pitches))
-  ;;(replace-step (ly:make-pitch 0 2 0) pitches))
-
-  ;; ADDED
   (set! pitches (replace-step (cons (ly:make-pitch 0 4 SHARP) 5) pitches))
   (replace-step (cons (ly:make-pitch 0 2 0) 3) pitches))
 
 (define (minor-modifier pitches)
-  ;; ORIG
-  ;;(replace-step (ly:make-pitch 0 2 FLAT) pitches))
-
-  ;; ADDED
   (replace-step (cons (ly:make-pitch 0 2 FLAT) 3) pitches))
 
 (define (maj7-modifier pitches)
-  ;; ORIG
-  ;;(set! pitches (remove-step 7 pitches))
-  ;;(cons (ly:make-pitch 0 6 0) pitches))
-
-  ;; ADDED
   (set! pitches (remove-step 7 pitches))
   (cons (cons (ly:make-pitch 0 6 0) 7) pitches))
 
 (define (dim-modifier pitches)
-  ;; ORIG
-  ;;(set! pitches (replace-step (ly:make-pitch 0 2 FLAT) pitches))
-  ;;(set! pitches (replace-step (ly:make-pitch 0 4 FLAT) pitches))
-  ;;(set! pitches (replace-step (ly:make-pitch 0 6 DOUBLE-FLAT) pitches))
-  ;;pitches)
-
-  ;; ADDED
   (set! pitches (replace-step (cons (ly:make-pitch 0 2 FLAT) 3) pitches))
   (set! pitches (replace-step (cons (ly:make-pitch 0 4 FLAT) 5) pitches))
   (set! pitches (replace-step (cons (ly:make-pitch 0 6 DOUBLE-FLAT) 7) pitches))
   pitches)
 
 (define (sus-modifier pitches)
-  ;; NO NEED TO CHANGE
   (remove-step (pitch-step (ly:make-pitch 0 2 0)) pitches))
 
 (define-safe-public default-chord-modifier-list
@@ -305,11 +278,8 @@ non-inverted note."
   (map (lambda (n)
          (define (nca x)
            (if (= x 7) FLAT 0))
-         ;; ADDED
          (if (>= n 8)
-             ;;(ly:make-pitch 1 (- n 8) (nca n))
              (cons (ly:make-pitch 1 (- n 8) (nca n)) n)
-             ;;(ly:make-pitch 0 (- n 1) (nca n))))
              (cons (ly:make-pitch 0 (- n 1) (nca n)) n)))
        '(1 3 5 7 9 11 13)))
 
@@ -317,21 +287,16 @@ non-inverted note."
   "Stack thirds listed in BASE until we reach UPPER-STEP.  Add
 UPPER-STEP separately."
   (cond ((null? base) '())
-        ;; ADDED
-        ;;((> (ly:pitch-steps upper-step) (ly:pitch-steps (car base)))
-        ;;  (cons (car base) (stack-thirds upper-step (cdr base))))
         ((> (ly:pitch-steps upper-step) (ly:pitch-steps (caar base)))
          (cons (car base) (stack-thirds upper-step (cdr base))))
-        ;;((<= (ly:pitch-steps upper-step) (ly:pitch-steps (car base)))
-        ;; (list upper-step))
         ((<= (ly:pitch-steps upper-step) (ly:pitch-steps (caar base)))
          (list (cons upper-step  (cdar base))))
         (else '())))
 
-;; ADDED: Helper function for sorting chord notes
+;; Helper function for sorting chord notes
 (define (chord-degree<? degree1 degree2)
       (ly:pitch<? (car degree1) (car degree2)))
 
-;; ADDED: Helper function for transposing chord
+;; Helper function for transposing chord
 (define (chord-pitch-transpose x root)
       (cons (ly:pitch-transpose (car x) root) (cdr x)))
