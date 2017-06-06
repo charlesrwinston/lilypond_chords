@@ -39,7 +39,7 @@
   "Musicological notation for an interval.  Eg. C to D is 2."
   (+ 1 (ly:pitch-steps p)))
 
-;; ADDED changes. Pitches is now a list of pairs.
+;; ADDED changes. Pitches (ps) is now a list of pairs.
 (define (get-step x ps)
   "Does PS have the X step? Return that step if it does."
   (if (null? ps)
@@ -49,7 +49,7 @@
           (car ps)
           (get-step x (cdr ps)))))
 
-;; ADDED changes. Pitches is now a list of pairs, and p is a pitch pair.
+;; ADDED changes. Pitches (ps) is now a list of pairs, and p is a pitch pair.
 (define (replace-step p ps)
   "Copy PS, but replace the step of P in PS."
   (if (null? ps)
@@ -67,7 +67,7 @@
       '()
       (let* ((t (remove-step x (cdr ps))))
         ;;(if (= (- x 1) (ly:pitch-steps (car ps)))
-        (if (= (- x 1) (ly:pitch-steps (car (car ps))))
+        (if (= (- x 1) (ly:pitch-steps (caar ps)))
             t
             (cons (car ps) t)))))
 
