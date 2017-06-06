@@ -165,8 +165,8 @@ the bass specified.
     (if (and (not explicit-11)
              (get-step 11 complete-chord)
              (get-step 3 complete-chord)
-             (= 0 (ly:pitch-alteration (get-step 11 complete-chord)))
-             (= 0 (ly:pitch-alteration (get-step 3 complete-chord))))
+             (= 0 (ly:pitch-alteration (car (get-step 11 complete-chord))))
+             (= 0 (ly:pitch-alteration (car (get-step 3 complete-chord)))))
         (set! complete-chord (remove-step 11 complete-chord)))
     ;; if omit-3 has been set (and not reset by an explicit 3
     ;; somewhere), we remove the 3
