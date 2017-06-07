@@ -39,35 +39,32 @@
   "Musicological notation for an interval.  Eg. C to D is 2."
   (+ 1 (ly:pitch-steps p)))
 
-;; ADDED changes. Pitches (ps) is now a list of pairs.
+;; Return the chord-entry of step x in chord-entries ps
 (define (get-step x ps)
   "Does PS have the X step? Return that step if it does."
   (if (null? ps)
       #f
-      ;;(if (= (- x 1) (ly:pitch-steps (car ps)))
-      (if (= (- x 1) (ly:pitch-steps (caar ps)))
+      (if (= (- x 1) (ly:pitch-steps (entry-pitch (car ps))))
           (car ps)
           (get-step x (cdr ps)))))
 
-;; ADDED changes. Pitches (ps) is now a list of pairs, and p is a pitch pair.
+;; Replace chord-entry p in chord-entries ps
 (define (replace-step p ps)
   "Copy PS, but replace the step of P in PS."
   (if (null? ps)
       '()
       (let* ((t (replace-step p (cdr ps))))
-        ;;(if (= (ly:pitch-steps p) (ly:pitch-steps (car ps)))
-        (if (= (ly:pitch-steps (car p)) (ly:pitch-steps (car (car ps))))
+        (if (= (ly:pitch-steps (entry-pitch p)) (ly:pitch-steps (entry-pitch (car ps))))
             (cons p t)
             (cons (car ps) t)))))
 
-;; ADDED changes. Pitches is now a list of pairs, and x is just a pitch number
+;; Remove step x from chord-entries ps
 (define (remove-step x ps)
   "Copy PS, but leave out the Xth step."
   (if (null? ps)
       '()
       (let* ((t (remove-step x (cdr ps))))
-        ;;(if (= (- x 1) (ly:pitch-steps (car ps)))
-        (if (= (- x 1) (ly:pitch-steps (caar ps)))
+        (if (= (- x 1) (ly:pitch-steps (entry-pitch (car ps))))
             t
             (cons (car ps) t)))))
 

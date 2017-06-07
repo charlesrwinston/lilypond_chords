@@ -39,15 +39,15 @@ Entry point for the parser."
          (start-additions #t))
          
 
-    (define (interpret-inversion chord mods)
+    (define (interpret-inversion chord-entries mods)
       "Read /FOO part.  Side effect: INVERSION is set."
       (if (and (> (length mods) 1) (eq? (car mods) 'chord-slash))
           (begin
             (set! inversion (cadr mods))
             (set! mods (cddr mods))))
-      (interpret-bass chord mods))
+      (interpret-bass chord-entries mods))
 
-    (define (interpret-bass chord mods)
+    (define (interpret-bass chord-entries mods)
       "Read /+FOO part.  Side effect: BASS is set."
       (if (and (> (length mods) 1) (eq? (car mods) 'chord-bass))
           (begin
@@ -56,34 +56,34 @@ Entry point for the parser."
       (if (pair? mods)
           (ly:parser-error
            (format #f (_ "Spurious garbage following chord: ~A") mods)))
-      chord)
+      chord-entries)
 
-    (define (interpret-removals  chord mods)
-      (define (inner-interpret chord mods)
+    (define (interpret-removals  chord-entries mods)
+      (define (inner-interpret chord-entries mods)
         (if (and (pair? mods) (ly:pitch? (car mods)))
-            (inner-interpret (remove-step (+ 1  (ly:pitch-steps (car mods))) chord)
+            (inner-interpret (remove-step (+ 1  (ly:pitch-steps (car mods))) chord-entries)
                              (cdr mods))
-            (interpret-inversion chord mods)))
+            (interpret-inversion chord-entries mods)))
       (if (and (pair? mods) (eq? (car mods) 'chord-caret))
-          (inner-interpret chord (cdr mods))
-          (interpret-inversion chord mods)))
+          (inner-interpret chord-entries (cdr mods))
+          (interpret-inversion chord-entries mods)))
 
-    (define (interpret-additions chord mods)
+    (define (interpret-additions chord-entries mods)
       "Interpret additions.  TODO: should restrict modifier use?"
-      (cond ((null? mods) chord)
+      (cond ((null? mods) chord-entries)
             ((ly:pitch? (car mods))
              (case (pitch-step (car mods))
                ((11) (set! explicit-11 #t))
                ((2 4) (set! explicit-2/4 #t))
                ((3) (set! omit-3 #f)))
-             (interpret-additions (cons (cons (car mods) (pitch-step (car mods)))
-                                        (remove-step (pitch-step (car mods)) chord))
+             (interpret-additions (cons (make-chord-entry (car mods) (pitch-step (car mods)))
+                                        (remove-step (pitch-step (car mods)) chord-entries))
                                   (cdr mods)))
              ;; TODO look at these intereperet additions more
             ((procedure? (car mods))
-             (interpret-additions ((car mods) chord)
+             (interpret-additions ((car mods) chord-entries)
                                   (cdr mods)))
-            (else (interpret-removals chord mods))))
+            (else (interpret-removals chord-entries mods))))
 
     (define (pitch-octavated-strictly-below p root)
       "return P, but octavated, so it is below ROOT"
@@ -103,15 +103,15 @@ If INVERSION is not in COMPLETE-CHORD, it will be set as a BASS, overriding
 the bass specified.
 
 "
-      (let* ((root-degree (car complete-chord))
+      (let* ((root-entry (car complete-chord))
              (inv? (lambda (y)
-                     (and (= (ly:pitch-notename (car y))
+                     (and (= (ly:pitch-notename (entry-pitch y))
                              (ly:pitch-notename inversion))
-                          (= (ly:pitch-alteration (car y))
+                          (= (ly:pitch-alteration (entry-pitch y))
                              (ly:pitch-alteration inversion)))))
              (rest-of-chord (remove inv? complete-chord))
              (inversion-candidates (filter inv? complete-chord))
-             (down-inversion (pitch-octavated-strictly-below inversion (car root-degree))))
+             (down-inversion (pitch-octavated-strictly-below inversion (entry-pitch root-entry))))
         (if (pair? inversion-candidates)
             (set! inversion (car inversion-candidates))
             (begin
@@ -157,16 +157,16 @@ the bass specified.
     ;; if sus has been given neither 2 or 4, we add 4.
     (if (and (eq? lead-mod sus-modifier)
              (not explicit-2/4))
-        (set! complete-chord (cons (cons (ly:make-pitch 0 4 0) 4) complete-chord)))
+        (set! complete-chord (cons (make-chord-entry (ly:make-pitch 0 4 0) 4) complete-chord)))
     ;; sort the notes in the chord
-    (set! complete-chord (sort complete-chord chord-degree<?))
+    (set! complete-chord (sort complete-chord chord-entry<?))
     ;; If natural 11 + natural 3 is present, but not given explicitly,
     ;; we remove the 11.
     (if (and (not explicit-11)
              (get-step 11 complete-chord)
              (get-step 3 complete-chord)
-             (= 0 (ly:pitch-alteration (car (get-step 11 complete-chord))))
-             (= 0 (ly:pitch-alteration (car (get-step 3 complete-chord)))))
+             (= 0 (ly:pitch-alteration (entry-pitch (get-step 11 complete-chord))))
+             (= 0 (ly:pitch-alteration (entry-pitch (get-step 3 complete-chord)))))
         (set! complete-chord (remove-step 11 complete-chord)))
     ;; if omit-3 has been set (and not reset by an explicit 3
     ;; somewhere), we remove the 3
@@ -176,14 +176,12 @@ the bass specified.
     ;; not relative to the root.
     (set! complete-chord (map (lambda (x) (chord-pitch-transpose x root))
                               complete-chord))
-
-    ;; TODO: look at this:
     (if inversion
         (set! complete-chord (process-inversion complete-chord)))
     (if bass
-        (set! bass (cons (pitch-octavated-strictly-below bass root) 'bass)))
+        (set! bass (make-chord-entry (pitch-octavated-strictly-below bass root) 'bass)))
     ;; DEBUG STATEMENT
-    (if #t
+    (if #f
         (begin
           (write-me "\n*******\n" flat-mods)
           (write-me "root: " root)
@@ -198,29 +196,29 @@ the bass specified.
         (make-chord-elements complete-chord bass duration #f #f))))
 
 
-(define (make-chord-elements pitches bass duration inversion original-inv-pitch)
+(define (make-chord-elements chord-entries bass duration inversion original-inv-pitch)
   "Make EventChord with notes corresponding to PITCHES, BASS and
 DURATION, and INVERSION.  Notes above INVERSION are transposed downward
 along with the inversion as long as they end up below at least one
 non-inverted note."
-  ;; ADDED pitch is now a pair
-  (define (make-note-ev pitch . rest)
+  (define (make-note-ev chord-entry . rest)
     (apply make-music 'NoteEvent
-           'chord-degree (cdr pitch)
+           'chord-degree (entry-degree chord-entry)
            'duration duration
-           'pitch (car pitch)
+           'pitch (entry-pitch chord-entry)
            rest))
   (cond (inversion
          (let* ((octavation (- (ly:pitch-octave inversion)
                                (ly:pitch-octave (car original-inv-pitch))))
                 (down (ly:make-pitch octavation 0 0))
                 (inv-degree (cdr original-inv-pitch)))
-           (define (invert p) (cons (ly:pitch-transpose down (car p)) (cdr p)))
+           (define (invert p) (make-chord-entry (ly:pitch-transpose down (entry-pitch p))
+                                                (entry-degree p)))
            (define (make-inverted p . rest)
              (apply make-note-ev (invert p) 'octavation octavation rest))
            (receive (uninverted high)
-                    (span (lambda (p) (ly:pitch<? (car p) (car original-inv-pitch)))
-                          pitches)
+                    (span (lambda (p) (ly:pitch<? (entry-pitch p) (entry-pitch original-inv-pitch)))
+                          chord-entries)
                     (receive (invertible rest)
                              (if (null? uninverted)
                                  ;; The following line caters for
@@ -229,7 +227,8 @@ non-inverted note."
                                  ;; or <f' a' c''>
                                  (values '() high)
                                  (span (lambda (p)
-                                         (ly:pitch<? (car (invert p)) (caar uninverted)))
+                                         (ly:pitch<? (entry-pitch (invert p))
+                                                     (entry-pitch (car uninverted))))
                                        high))
                              (cons (make-inverted original-inv-pitch 'inversion #t)
                                    (append (if bass (list (make-note-ev bass 'bass #t)) '())
@@ -237,33 +236,33 @@ non-inverted note."
                                            (map make-note-ev uninverted)
                                            (map make-note-ev rest)))))))
         (bass (cons (make-note-ev bass 'bass #t)
-                    (map make-note-ev pitches)))
+                    (map make-note-ev chord-entries)))
         (else
          (begin
-           (map make-note-ev pitches)))))
+           (map make-note-ev chord-entries)))))
 
 ;;;;;;;;;;;;;;;;
 ;; chord modifiers change the pitch list.
 
-(define (aug-modifier pitches)
-  (set! pitches (replace-step (cons (ly:make-pitch 0 4 SHARP) 5) pitches))
-  (replace-step (cons (ly:make-pitch 0 2 0) 3) pitches))
+(define (aug-modifier chord-entries)
+  (set! chord-entries (replace-step (make-chord-entry (ly:make-pitch 0 4 SHARP) 5) chord-entries))
+  (replace-step (make-chord-entry (ly:make-pitch 0 2 0) 3) chord-entries))
 
-(define (minor-modifier pitches)
-  (replace-step (cons (ly:make-pitch 0 2 FLAT) 3) pitches))
+(define (minor-modifier chord-entries)
+  (replace-step (make-chord-entry (ly:make-pitch 0 2 FLAT) 3) chord-entries))
 
-(define (maj7-modifier pitches)
-  (set! pitches (remove-step 7 pitches))
-  (cons (cons (ly:make-pitch 0 6 0) 7) pitches))
+(define (maj7-modifier chord-entries)
+  (set! chord-entries (remove-step 7 chord-entries))
+  (cons (make-chord-entry (ly:make-pitch 0 6 0) 7) chord-entries))
 
-(define (dim-modifier pitches)
-  (set! pitches (replace-step (cons (ly:make-pitch 0 2 FLAT) 3) pitches))
-  (set! pitches (replace-step (cons (ly:make-pitch 0 4 FLAT) 5) pitches))
-  (set! pitches (replace-step (cons (ly:make-pitch 0 6 DOUBLE-FLAT) 7) pitches))
-  pitches)
+(define (dim-modifier chord-entries)
+  (set! chord-entries (replace-step (make-chord-entry (ly:make-pitch 0 2 FLAT) 3) chord-entries))
+  (set! chord-entries (replace-step (make-chord-entry (ly:make-pitch 0 4 FLAT) 5) chord-entries))
+  (set! chord-entries (replace-step (make-chord-entry (ly:make-pitch 0 6 DOUBLE-FLAT) 7) chord-entries))
+  chord-entries)
 
-(define (sus-modifier pitches)
-  (remove-step (pitch-step (ly:make-pitch 0 2 0)) pitches))
+(define (sus-modifier chord-entries)
+  (remove-step (pitch-step (ly:make-pitch 0 2 0)) chord-entries))
 
 (define-safe-public default-chord-modifier-list
   `((m . ,minor-modifier)
@@ -273,30 +272,42 @@ non-inverted note."
     (maj . , maj7-modifier)
     (sus . , sus-modifier)))
 
+;; Helper function for sorting chord notes
+(define (chord-entry<? entry1 entry2)
+  (ly:pitch<? (car entry1) (car entry2)))
+
+;; Helper function for transposing chord
+(define (chord-pitch-transpose p root)
+  (make-chord-entry (ly:pitch-transpose (entry-pitch p) root) (cdr p)))
+
+;; Return pitch of a chord-entry
+(define (entry-pitch chord-entry)
+  (car chord-entry))
+
+;; Return degree of a chord-entry
+(define (entry-degree chord-entry)
+  (cdr chord-entry))
+
+;; Make chord-entry out of pitch and degree
+(define (make-chord-entry pitch degree)
+  (cons pitch degree))
+
 ;; canonical 13 chord.
 (define the-canonical-chord
   (map (lambda (n)
          (define (nca x)
            (if (= x 7) FLAT 0))
          (if (>= n 8)
-             (cons (ly:make-pitch 1 (- n 8) (nca n)) n)
-             (cons (ly:make-pitch 0 (- n 1) (nca n)) n)))
+             (make-chord-entry (ly:make-pitch 1 (- n 8) (nca n)) n)
+             (make-chord-entry (ly:make-pitch 0 (- n 1) (nca n)) n)))
        '(1 3 5 7 9 11 13)))
 
 (define (stack-thirds upper-step base)
   "Stack thirds listed in BASE until we reach UPPER-STEP.  Add
 UPPER-STEP separately."
   (cond ((null? base) '())
-        ((> (ly:pitch-steps upper-step) (ly:pitch-steps (caar base)))
+        ((> (ly:pitch-steps upper-step) (ly:pitch-steps (entry-pitch (car base))))
          (cons (car base) (stack-thirds upper-step (cdr base))))
-        ((<= (ly:pitch-steps upper-step) (ly:pitch-steps (caar base)))
-         (list (cons upper-step  (cdar base))))
+        ((<= (ly:pitch-steps upper-step) (ly:pitch-steps (entry-pitch (car base))))
+         (list (make-chord-entry upper-step  (entry-degree (car base)))))
         (else '())))
-
-;; Helper function for sorting chord notes
-(define (chord-degree<? degree1 degree2)
-      (ly:pitch<? (car degree1) (car degree2)))
-
-;; Helper function for transposing chord
-(define (chord-pitch-transpose x root)
-      (cons (ly:pitch-transpose (car x) root) (cdr x)))
