@@ -147,16 +147,6 @@ the bass specified.
           (set! base-chord
                 (stack-thirds (car flat-mods) the-canonical-chord))
           (set! flat-mods (cdr flat-mods))))
-    ;; ADDED
-    (if #t
-        (begin
-          (write-me "\n*******\n" flat-mods)
-          (write-me "root: " root)
-          (write-me "base chord: " base-chord)
-          (write-me "complete chord: " complete-chord)
-          (write-me "inversion: " inversion)
-          (write-me "bass: " bass)
-          (write-me "lead-mod: " lead-mod)))
     ;; apply modifier
     (if (procedure? lead-mod)
         (begin (set! base-chord (lead-mod base-chord))))
@@ -191,7 +181,7 @@ the bass specified.
     (if bass
         (set! bass (make-chord-entry (pitch-octavated-strictly-below bass root) 'bass)))
     ;; DEBUG STATEMENT
-    (if #t
+    (if #f
         (begin
           (write-me "\n*******\n" flat-mods)
           (write-me "root: " root)
@@ -262,19 +252,34 @@ non-inverted note."
   (let* ((chord-semantics (make-chord-semantics 3 'major))
          (pitch (ly:make-pitch 0 2 0))
          (chord-entry (make-chord-entry pitch chord-semantics)))
-    (replace-step (make-chord-entry (ly:make-pitch 0 2 0) 3) chord-entries)))
+    (replace-step chord-entry chord-entries)))
 
 (define (minor-modifier chord-entries)
-  (replace-step (make-chord-entry (ly:make-pitch 0 2 FLAT) 3) chord-entries))
+  (let* ((chord-semantics (make-chord-semantics 3 'minor))
+         (pitch (ly:make-pitch 0 2 FLAT))
+         (chord-entry (make-chord-entry pitch chord-semantics)))
+    (replace-step chord-entry chord-entries)))
 
 (define (maj7-modifier chord-entries)
   (set! chord-entries (remove-step 7 chord-entries))
-  (cons (make-chord-entry (ly:make-pitch 0 6 0) 7) chord-entries))
+  (let* ((chord-semantics (make-chord-semantics 7 'major))
+         (pitch (ly:make-pitch 0 6 0))
+         (chord-entry (make-chord-entry pitch chord-semantics)))
+    (cons chord-entry chord-entries)))
 
 (define (dim-modifier chord-entries)
-  (set! chord-entries (replace-step (make-chord-entry (ly:make-pitch 0 2 FLAT) 3) chord-entries))
-  (set! chord-entries (replace-step (make-chord-entry (ly:make-pitch 0 4 FLAT) 5) chord-entries))
-  (set! chord-entries (replace-step (make-chord-entry (ly:make-pitch 0 6 DOUBLE-FLAT) 7) chord-entries))
+  (let* ((chord-semantics (make-chord-semantics 3 'minor))
+         (pitch (ly:make-pitch 0 2 FLAT))
+         (chord-entry (make-chord-entry pitch chord-semantics)))
+    (set! chord-entries (replace-step chord-entry chord-entries)))
+  (let* ((chord-semantics (make-chord-semantics 5 'diminished))
+         (pitch (ly:make-pitch 0 4 FLAT))
+         (chord-entry (make-chord-entry pitch chord-semantics)))
+    (set! chord-entries (replace-step chord-entry chord-entries)))
+  (let* ((chord-semantics (make-chord-semantics 7 'diminished))
+         (pitch (ly:make-pitch 0 6 DOUBLE-FLAT))
+         (chord-entry (make-chord-entry pitch chord-semantics)))
+    (set! chord-entries (replace-step chord-entry chord-entries)))
   chord-entries)
 
 (define (sus-modifier chord-entries)
@@ -315,11 +320,12 @@ non-inverted note."
 ;; make chord-semantics list used in canonical 13
 (define (make-chord-semantics-list cslist step-number)
   (define quality 'major)
+  ;; DEBUG
   ;;(newline) (display "CSLIST: ") (display cslist) (newline)
   (if (= step-number 1) (set! quality 'perfect))
   (if (= step-number 5) (set! quality 'perfect))
   (if (= step-number 7) (set! quality 'minor))
-  (if (= step-number 15) cslist
+  (if (= step-number 15) (reverse cslist)
       (make-chord-semantics-list
           (cons (list (cons 'step-number step-number) (cons 'step-quality quality)) cslist)
           (+ step-number 2))))
@@ -339,7 +345,8 @@ non-inverted note."
 (define (stack-thirds upper-step base)
   "Stack thirds listed in BASE until we reach UPPER-STEP.  Add
 UPPER-STEP separately."
-  (newline) (display "BASE: ") (display base) (newline)
+  ;; DEBUG
+  ;;(newline) (display "BASE: ") (display base) (newline)
   (cond ((null? base) '())
         ((> (ly:pitch-steps upper-step) (ly:pitch-steps (entry-pitch (car base))))
          (cons (car base) (stack-thirds upper-step (cdr base))))
