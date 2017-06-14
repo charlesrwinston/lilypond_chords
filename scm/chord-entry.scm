@@ -203,19 +203,19 @@ along with the inversion as long as they end up below at least one
 non-inverted note."
   (define (make-note-ev chord-entry . rest)
     (apply make-music 'NoteEvent
-           'chord-degree (entry-chord-semantics chord-entry)
+           'chord-semantics (entry-chord-semantics chord-entry)
            'duration duration
            'pitch (entry-pitch chord-entry)
            rest))
   (cond (inversion
          (let* ((octavation (- (ly:pitch-octave inversion)
-                               (ly:pitch-octave (car original-inv-pitch))))
+                               (ly:pitch-octave (entry-pitch original-inv-pitch))))
                 (down (ly:make-pitch octavation 0 0))
-                (inv-degree (cdr original-inv-pitch)))
-           (define (invert p) (make-chord-entry (ly:pitch-transpose down (entry-pitch p))
-                                                (entry-degree p)))
+                (inv-semantics (entry-chord-semantics original-inv-pitch)))
+           (define (invert-chord-entry p) (make-chord-entry (ly:pitch-transpose down (entry-pitch p))
+                                                    (entry-chord-semantics p)))
            (define (make-inverted p . rest)
-             (apply make-note-ev (invert p) 'octavation octavation rest))
+             (apply make-note-ev (invert-chord-entry p) 'octavation octavation rest))
            (receive (uninverted high)
                     (span (lambda (p) (ly:pitch<? (entry-pitch p) (entry-pitch original-inv-pitch)))
                           chord-entries)
@@ -227,7 +227,7 @@ non-inverted note."
                                  ;; or <f' a' c''>
                                  (values '() high)
                                  (span (lambda (p)
-                                         (ly:pitch<? (entry-pitch (invert p))
+                                         (ly:pitch<? (entry-pitch (invert-chord-entry p))
                                                      (entry-pitch (car uninverted))))
                                        high))
                              (cons (make-inverted original-inv-pitch 'inversion #t)
