@@ -147,6 +147,16 @@ the bass specified.
           (set! base-chord
                 (stack-thirds (car flat-mods) the-canonical-chord))
           (set! flat-mods (cdr flat-mods))))
+    ;; ADDED
+    (if #t
+        (begin
+          (write-me "\n*******\n" flat-mods)
+          (write-me "root: " root)
+          (write-me "base chord: " base-chord)
+          (write-me "complete chord: " complete-chord)
+          (write-me "inversion: " inversion)
+          (write-me "bass: " bass)
+          (write-me "lead-mod: " lead-mod)))
     ;; apply modifier
     (if (procedure? lead-mod)
         (begin (set! base-chord (lead-mod base-chord))))
@@ -181,7 +191,7 @@ the bass specified.
     (if bass
         (set! bass (make-chord-entry (pitch-octavated-strictly-below bass root) 'bass)))
     ;; DEBUG STATEMENT
-    (if #f
+    (if #t
         (begin
           (write-me "\n*******\n" flat-mods)
           (write-me "root: " root)
@@ -203,7 +213,7 @@ along with the inversion as long as they end up below at least one
 non-inverted note."
   (define (make-note-ev chord-entry . rest)
     (apply make-music 'NoteEvent
-           'chord-degree (entry-degree chord-entry)
+           'chord-degree (entry-chord-semantics chord-entry)
            'duration duration
            'pitch (entry-pitch chord-entry)
            rest))
@@ -245,8 +255,14 @@ non-inverted note."
 ;; chord modifiers change the pitch list.
 
 (define (aug-modifier chord-entries)
-  (set! chord-entries (replace-step (make-chord-entry (ly:make-pitch 0 4 SHARP) 5) chord-entries))
-  (replace-step (make-chord-entry (ly:make-pitch 0 2 0) 3) chord-entries))
+  (let* ((chord-semantics (make-chord-semantics 5 'augmented))
+         (pitch (ly:make-pitch 0 4 SHARP))
+         (chord-entry (make-chord-entry pitch chord-semantics)))
+    (set! chord-entries (replace-step chord-entry chord-entries)))
+  (let* ((chord-semantics (make-chord-semantics 3 'major))
+         (pitch (ly:make-pitch 0 2 0))
+         (chord-entry (make-chord-entry pitch chord-semantics)))
+    (replace-step (make-chord-entry (ly:make-pitch 0 2 0) 3) chord-entries)))
 
 (define (minor-modifier chord-entries)
   (replace-step (make-chord-entry (ly:make-pitch 0 2 FLAT) 3) chord-entries))
@@ -274,40 +290,59 @@ non-inverted note."
 
 ;; Helper function for sorting chord notes
 (define (chord-entry<? entry1 entry2)
-  (ly:pitch<? (car entry1) (car entry2)))
+  (ly:pitch<? (entry-pitch entry1) (entry-pitch entry2)))
 
 ;; Helper function for transposing chord
 (define (chord-pitch-transpose p root)
-  (make-chord-entry (ly:pitch-transpose (entry-pitch p) root) (cdr p)))
+  (make-chord-entry (ly:pitch-transpose (entry-pitch p) root) (entry-chord-semantics p)))
 
 ;; Return pitch of a chord-entry
 (define (entry-pitch chord-entry)
   (car chord-entry))
 
-;; Return degree of a chord-entry
-(define (entry-degree chord-entry)
+;; Return chord-semantics of a chord-entry
+(define (entry-chord-semantics chord-entry)
   (cdr chord-entry))
 
-;; Make chord-entry out of pitch and degree
-(define (make-chord-entry pitch degree)
-  (cons pitch degree))
+;; Make chord-entry out of pitch and chord-semantics
+(define (make-chord-entry pitch chord-semantics)
+  (cons pitch chord-semantics))
+
+;; Make single chord-semantics
+(define (make-chord-semantics number quality)
+  (list (cons 'step-number number) (cons 'step-quality quality)))
+
+;; make chord-semantics list used in canonical 13
+(define (make-chord-semantics-list cslist step-number)
+  (define quality 'major)
+  ;;(newline) (display "CSLIST: ") (display cslist) (newline)
+  (if (= step-number 1) (set! quality 'perfect))
+  (if (= step-number 5) (set! quality 'perfect))
+  (if (= step-number 7) (set! quality 'minor))
+  (if (= step-number 15) cslist
+      (make-chord-semantics-list
+          (cons (list (cons 'step-number step-number) (cons 'step-quality quality)) cslist)
+          (+ step-number 2))))
 
 ;; canonical 13 chord.
 (define the-canonical-chord
-  (map (lambda (n)
+  (map (lambda (semantics-entry)
          (define (nca x)
            (if (= x 7) FLAT 0))
+         (define n (assoc-ref semantics-entry 'step-number))
          (if (>= n 8)
-             (make-chord-entry (ly:make-pitch 1 (- n 8) (nca n)) n)
-             (make-chord-entry (ly:make-pitch 0 (- n 1) (nca n)) n)))
-       '(1 3 5 7 9 11 13)))
-
+             (make-chord-entry (ly:make-pitch 1 (- n 8) (nca n)) semantics-entry)
+             (make-chord-entry (ly:make-pitch 0 (- n 1) (nca n)) semantics-entry)))
+       (make-chord-semantics-list '() 1)
+         ))
+ 
 (define (stack-thirds upper-step base)
   "Stack thirds listed in BASE until we reach UPPER-STEP.  Add
 UPPER-STEP separately."
+  (newline) (display "BASE: ") (display base) (newline)
   (cond ((null? base) '())
         ((> (ly:pitch-steps upper-step) (ly:pitch-steps (entry-pitch (car base))))
          (cons (car base) (stack-thirds upper-step (cdr base))))
         ((<= (ly:pitch-steps upper-step) (ly:pitch-steps (entry-pitch (car base))))
-         (list (make-chord-entry upper-step  (entry-degree (car base)))))
+         (list (make-chord-entry upper-step  (entry-chord-semantics (car base)))))
         (else '())))
