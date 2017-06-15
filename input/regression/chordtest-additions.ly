@@ -13,9 +13,18 @@
 \new Staff {
     \new Voice {
          #(display "\nADDITIONS:\n")
-    	 \displayMusic \chordmode { f1:7 f:7.2 f:7.3 f:7.4 f:7.5
+	 #(display "\nNATURALS:\n")
+	 \displayMusic \chordmode { f1:7 f:7.2 f:7.3 f:7.4 f:7.5
 	                            f:7.6 f:7.8 f:7.9 f:7.10
 				    f:7.11 f:7.12 f:7.13 }
+	 #(display "\nSHARPS:\n")
+    	 \displayMusic \chordmode { f1:7 f:7.2+ f:7.3+ f:7.4+ f:7.5+
+	                            f:7.6+ f:7.8+ f:7.9+ f:7.10+
+				    f:7.11+ f:7.12+ f:7.13+ }
+         #(display "\nFLATS:\n")
+    	 \displayMusic \chordmode { f1:7 f:7.2- f:7.3- f:7.4- f:7.5-
+	                            f:7.6- f:7.8- f:7.9- f:7.10-
+				    f:7.11- f:7.12- f:7.13- }
     
     }
 }
