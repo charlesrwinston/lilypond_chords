@@ -76,7 +76,7 @@ Entry point for the parser."
                ((11) (set! explicit-11 #t))
                ((2 4) (set! explicit-2/4 #t))
                ((3) (set! omit-3 #f)))
-             (interpret-additions (cons (make-chord-entry (car mods) (pitch-step (car mods)))
+             (interpret-additions (cons (make-chord-entry-from-pitch (car mods))
                                         (remove-step (pitch-step (car mods)) chord-entries))
                                   (cdr mods)))
              ;; TODO look at these intereperet additions more
@@ -313,6 +313,37 @@ non-inverted note."
 (define (make-chord-entry pitch chord-semantics)
   (cons pitch chord-semantics))
 
+;; Make chord-entry from just pitch
+(define (make-chord-entry-from-pitch pitch)
+  (let* ((step (pitch-step pitch))
+         (alteration (ly:pitch-alteration pitch))
+         (quality 'major))
+    (cond ((or (= step 2) (= step 9))
+           (cond ((= alteration SHARP) (set! quality 'augmented))
+                 ((= alteration FLAT) (set! quality 'minor))
+                 ((= alteration DOUBLE-FLAT) (set! quality 'diminished))))
+          ((or (= step 3) (= step 10))
+           (cond ((= alteration SHARP) (set! quality 'augmented))
+                 ((= alteration FLAT) (set! quality 'minor))
+                 ((= alteration DOUBLE-FLAT) (set! quality 'diminished))))
+          ((or (= step 4) (= step 11)) ;; TODO: will 11 have the same qualities as 4?
+           (cond ((= alteration 0) (set! quality 'perfect))
+                 ((= alteration SHARP) (set! quality 'augmented))
+                 ((= alteration FLAT) (set! quality 'diminished))))
+          ((or (= step 5) (= step 12))
+           (cond ((= alteration 0) (set! quality 'perfect))
+                 ((= alteration SHARP) (set! quality 'augmented))
+                 ((= alteration FLAT) (set! quality 'diminished))))
+          ((or (= step 6) (= step 13))
+           (cond ((= alteration SHARP) (set! quality 'augmented))
+                 ((= alteration FLAT) (set! quality 'minor))
+                 ((= alteration DOUBLE-FLAT) (set! quality 'diminished))))
+          ((or (= step 1) (= step 8)) ;; TODO: define this better...
+           (cond ((= alteration 0) (set! quality 'perfect))
+                 ((= alteration SHARP) (set! quality 'augmented))
+                 ((= alteration FLAT) (set! quality 'diminished)))))
+    (make-chord-entry pitch (make-chord-semantics step quality))))
+
 ;; Make single chord-semantics
 (define (make-chord-semantics number quality)
   (list (cons 'step-number number) (cons 'step-quality quality)))
@@ -320,8 +351,6 @@ non-inverted note."
 ;; make chord-semantics list used in canonical 13
 (define (make-chord-semantics-list cslist step-number)
   (define quality 'major)
-  ;; DEBUG
-  ;;(newline) (display "CSLIST: ") (display cslist) (newline)
   (if (= step-number 1) (set! quality 'perfect))
   (if (= step-number 5) (set! quality 'perfect))
   (if (= step-number 7) (set! quality 'minor))
@@ -345,8 +374,6 @@ non-inverted note."
 (define (stack-thirds upper-step base)
   "Stack thirds listed in BASE until we reach UPPER-STEP.  Add
 UPPER-STEP separately."
-  ;; DEBUG
-  ;;(newline) (display "BASE: ") (display base) (newline)
   (cond ((null? base) '())
         ((> (ly:pitch-steps upper-step) (ly:pitch-steps (entry-pitch (car base))))
          (cons (car base) (stack-thirds upper-step (cdr base))))
