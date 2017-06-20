@@ -177,6 +177,7 @@ the bass specified.
               (interpret-additions base-chord flat-mods chord-semantics)
               (interpret-removals base-chord flat-mods chord-semantics)))
     ;; if sus has been given neither 2 or 4, we add 4.
+    ;; TODO: how to deal with sus semantics with 2 and 4
     (if (and (eq? lead-mod sus-modifier)
              (not explicit-2/4))
         (set! complete-chord (cons (make-chord-entry (ly:make-pitch 0 4 0)
@@ -304,6 +305,10 @@ non-inverted note."
   (update-chord-semantics chord-semantics
                           'removals
                           (sort (get-chord-semantics chord-semantics 'removals) ly:pitch<?)))
+
+;; get value from key in chord-semantics
+(define (get-chord-semantics key)
+  (assoc-ref chord-semantics key))
 
 ;; chord modifiers change the pitch list.
 (define (aug-modifier chord-entries)
