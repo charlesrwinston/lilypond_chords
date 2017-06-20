@@ -20,9 +20,8 @@
 
 (define-session-public chordmodifiers '())
 
-;; TODO: make this local. Causes problems because does not reset.
-(define chord-semantics
-  (list (cons 'quality 'major) (cons 'root (ly:make-pitch 0 0 0)) (cons 'extension #f)))
+;; TODO: probably make this local.
+(define chord-semantics '())
 
 (define-public (construct-chord-elements root duration modifications)
   "Build a chord on root using modifiers in @var{modifications}.
@@ -64,8 +63,10 @@ Entry point for the parser."
     (define (interpret-removals  chord mods)
       (define (inner-interpret chord mods)
         (if (and (pair? mods) (ly:pitch? (car mods)))
-            (inner-interpret (remove-step (+ 1  (ly:pitch-steps (car mods))) chord)
-                             (cdr mods))
+            (begin (update-chord-semantics
+                      'removals (cons (pitch-step (car mods)) (get-chord-semantics 'removals)))
+                   (inner-interpret (remove-step (+ 1  (ly:pitch-steps (car mods))) chord)
+                                    (cdr mods)))
             (interpret-inversion chord mods)))
       (if (and (pair? mods) (eq? (car mods) 'chord-caret))
           (inner-interpret chord (cdr mods))
@@ -79,6 +80,8 @@ Entry point for the parser."
                ((11) (set! explicit-11 #t))
                ((2 4) (set! explicit-2/4 #t))
                ((3) (set! omit-3 #f)))
+             (update-chord-semantics
+                'additions (cons (pitch-step (car mods)) (get-chord-semantics 'additions)))
              (interpret-additions (cons (car mods) (remove-step (pitch-step (car mods)) chord))
                                   (cdr mods)))
             ((procedure? (car mods))
@@ -121,6 +124,11 @@ the bass specified.
         (if inversion
             (cons down-inversion rest-of-chord)
             rest-of-chord)))
+    ;; BEGINNING OF MAIN PROCEDURE
+    ;; Default chord semantics
+    (set! chord-semantics
+          (list (cons 'quality 'maj) (cons 'root (ly:make-pitch 0 0 0)) (cons 'extension #f)
+                (cons 'additions '()) (cons 'removals '())))
     ;; root is always one octave too low.
     ;; something weird happens when this is removed,
     ;; every other chord is octavated. --hwn... hmmm.
@@ -152,11 +160,13 @@ the bass specified.
     ;; apply modifier
     (if (procedure? lead-mod)
         (set! base-chord (lead-mod base-chord)))
+    ;; interperet additions and removals
     (set! complete-chord
           (if start-additions
               (interpret-additions base-chord flat-mods)
               (interpret-removals base-chord flat-mods)))
     ;; if sus has been given neither 2 or 4, we add 4.
+    ;; TODO: how to deal with sus semantics with 2 and 4
     (if (and (eq? lead-mod sus-modifier)
              (not explicit-2/4))
         (set! complete-chord (cons (ly:make-pitch 0 4 0) complete-chord)))
@@ -245,23 +255,27 @@ non-inverted note."
 (define (update-chord-semantics key value)
   (assoc-set! chord-semantics key value))
 
+;; get value from key in chord-semantics
+(define (get-chord-semantics key)
+  (assoc-ref chord-semantics key))
+
 ;; chord modifiers change the pitch list.
 (define (aug-modifier pitches)
-  (update-chord-semantics 'quality 'augmented)
+  (update-chord-semantics 'quality 'aug)
   (set! pitches (replace-step (ly:make-pitch 0 4 SHARP) pitches))
   (replace-step (ly:make-pitch 0 2 0) pitches))
 
 (define (minor-modifier pitches)
-  (update-chord-semantics 'quality 'minor)
+  (update-chord-semantics 'quality 'min)
   (replace-step (ly:make-pitch 0 2 FLAT) pitches))
 
 (define (maj7-modifier pitches)
-  (update-chord-semantics 'quality 'major-seven)
+  (update-chord-semantics 'quality 'maj7)
   (set! pitches (remove-step 7 pitches))
   (cons (ly:make-pitch 0 6 0) pitches))
 
 (define (dim-modifier pitches)
-  (update-chord-semantics 'quality 'diminished)
+  (update-chord-semantics 'quality 'dim)
   (set! pitches (replace-step (ly:make-pitch 0 2 FLAT) pitches))
   (set! pitches (replace-step (ly:make-pitch 0 4 FLAT) pitches))
   (set! pitches (replace-step (ly:make-pitch 0 6 DOUBLE-FLAT) pitches))
