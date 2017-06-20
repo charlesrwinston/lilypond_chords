@@ -130,6 +130,11 @@ Syntax: @var{note}@code{\\breathe}")
         (types . (event breathing-event))
         (midi-length . ,breathe::midi-length)))
 
+    (ChordSemanticsEvent
+     . ((description . "Semantic information of an EventChord")
+        (types . (chord-semantics-event event))
+        ))
+
     (ClusterNoteEvent
      . ((description . "A note that is part of a cluster.")
         ;; not a note-event, to ensure that Note_heads_engraver doesn't eat it.

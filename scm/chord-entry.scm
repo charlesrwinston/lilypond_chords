@@ -199,6 +199,12 @@ non-inverted note."
            'duration duration
            'pitch pitch
            rest))
+  (define (make-chord-semantics-ev quality root)
+    (make-music 'ChordSemanticsEvent
+                'quality quality
+                'root root))
+  (define (make-elements note-events chord-semantics-event)
+    (cons chord-semantics-event note-events))
   (cond (inversion
          (let* ((octavation (- (ly:pitch-octave inversion)
                                (ly:pitch-octave original-inv-pitch)))
@@ -226,7 +232,7 @@ non-inverted note."
                                            (map make-note-ev rest)))))))
         (bass (cons (make-note-ev bass 'bass #t)
                     (map make-note-ev pitches)))
-        (else (map make-note-ev pitches))))
+        (else (make-elements (map make-note-ev pitches) (make-chord-semantics-ev 'major 'C)))))
 
 ;;;;;;;;;;;;;;;;
 ;; chord modifiers change the pitch list.
