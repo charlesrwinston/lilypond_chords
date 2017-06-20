@@ -20,6 +20,10 @@
 
 (define-session-public chordmodifiers '())
 
+;; TODO: make this local. Causes problems because does not reset.
+(define chord-semantics
+  (list (cons 'quality 'major) (cons 'root (ly:make-pitch 0 0 0)) (cons 'extension #f)))
+
 (define-public (construct-chord-elements root duration modifications)
   "Build a chord on root using modifiers in @var{modifications}.
 @code{NoteEvents} have duration @var{duration}.
@@ -121,6 +125,7 @@ the bass specified.
     ;; something weird happens when this is removed,
     ;; every other chord is octavated. --hwn... hmmm.
     (set! root (ly:pitch-transpose root (ly:make-pitch 1 0 0)))
+    (update-chord-semantics 'root root)
     ;; skip the leading : , we need some of the stuff following it.
     (if (pair? flat-mods)
         (if (eq? (car flat-mods) 'chord-colon)
@@ -142,6 +147,7 @@ the bass specified.
                  (set! omit-3 #t)))
           (set! base-chord
                 (stack-thirds (car flat-mods) the-canonical-chord))
+          (update-chord-semantics 'extension (pitch-step (car flat-mods)))
           (set! flat-mods (cdr flat-mods))))
     ;; apply modifier
     (if (procedure? lead-mod)
@@ -199,12 +205,11 @@ non-inverted note."
            'duration duration
            'pitch pitch
            rest))
-  (define (make-chord-semantics-ev quality root)
+  (define make-chord-semantics-ev
     (make-music 'ChordSemanticsEvent
-                'quality quality
-                'root root))
-  (define (make-elements note-events chord-semantics-event)
-    (cons chord-semantics-event note-events))
+                'chord-semantics chord-semantics))
+  (define (make-elements note-events)
+    (cons make-chord-semantics-ev note-events))
   (cond (inversion
          (let* ((octavation (- (ly:pitch-octave inversion)
                                (ly:pitch-octave original-inv-pitch)))
@@ -232,29 +237,38 @@ non-inverted note."
                                            (map make-note-ev rest)))))))
         (bass (cons (make-note-ev bass 'bass #t)
                     (map make-note-ev pitches)))
-        (else (make-elements (map make-note-ev pitches) (make-chord-semantics-ev 'major 'C)))))
+        (else (make-elements (map make-note-ev pitches)))))
 
 ;;;;;;;;;;;;;;;;
-;; chord modifiers change the pitch list.
 
+;; update chord-semantics alist
+(define (update-chord-semantics key value)
+  (assoc-set! chord-semantics key value))
+
+;; chord modifiers change the pitch list.
 (define (aug-modifier pitches)
+  (update-chord-semantics 'quality 'augmented)
   (set! pitches (replace-step (ly:make-pitch 0 4 SHARP) pitches))
   (replace-step (ly:make-pitch 0 2 0) pitches))
 
 (define (minor-modifier pitches)
+  (update-chord-semantics 'quality 'minor)
   (replace-step (ly:make-pitch 0 2 FLAT) pitches))
 
 (define (maj7-modifier pitches)
+  (update-chord-semantics 'quality 'major-seven)
   (set! pitches (remove-step 7 pitches))
   (cons (ly:make-pitch 0 6 0) pitches))
 
 (define (dim-modifier pitches)
+  (update-chord-semantics 'quality 'diminished)
   (set! pitches (replace-step (ly:make-pitch 0 2 FLAT) pitches))
   (set! pitches (replace-step (ly:make-pitch 0 4 FLAT) pitches))
   (set! pitches (replace-step (ly:make-pitch 0 6 DOUBLE-FLAT) pitches))
   pitches)
 
 (define (sus-modifier pitches)
+  (update-chord-semantics 'quality 'sus)
   (remove-step (pitch-step (ly:make-pitch 0 2 0)) pitches))
 
 (define-safe-public default-chord-modifier-list
