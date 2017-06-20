@@ -41,6 +41,7 @@ protected:
   virtual void finalize ();
   void listen_note (Stream_event *);
   void listen_rest (Stream_event *);
+  void listen_chord_semantics (Stream_event *);
 private:
   vector<Stream_event *> notes_;
 
@@ -157,6 +158,12 @@ Chord_name_engraver::listen_rest (Stream_event *ev)
 }
 
 void
+Chord_name_engraver::listen_chord_semantics (Stream_event *ev)
+{
+  (void) ev;
+}
+
+void
 Chord_name_engraver::stop_translation_timestep ()
 {
   notes_.clear ();
@@ -172,6 +179,7 @@ Chord_name_engraver::boot ()
 {
   ADD_LISTENER (Chord_name_engraver, note);
   ADD_LISTENER (Chord_name_engraver, rest);
+  ADD_LISTENER (Chord_name_engraver, chord_semantics);
 }
 
 ADD_TRANSLATOR (Chord_name_engraver,
