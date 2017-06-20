@@ -20,7 +20,6 @@
 
 (define-session-public chordmodifiers '())
 
-
 (define-public (construct-chord-elements root duration modifications)
   "Build a chord on root using modifiers in @var{modifications}.
 @code{NoteEvents} have duration @var{duration}.
@@ -243,7 +242,6 @@ non-inverted note."
                 'chord-semantics chord-semantics))
   (define (make-elements note-events chord-semantics)
     (cons (make-chord-semantics-ev chord-semantics) note-events))
-  
   (cond (inversion
          (let* ((octavation (- (ly:pitch-octave inversion)
                                (ly:pitch-octave (entry-pitch original-inv-pitch))))
@@ -269,7 +267,6 @@ non-inverted note."
                                          (ly:pitch<? (entry-pitch (invert-chord-entry p))
                                                      (entry-pitch (car uninverted))))
                                        high))
-<<<<<<< HEAD
                              (make-elements (cons (make-inverted original-inv-pitch 'inversion #t)
                                                   (append (if bass (list (make-note-ev bass 'bass #t)) '())
                                                           (map make-inverted invertible)
@@ -280,16 +277,6 @@ non-inverted note."
                                    (map make-note-ev chord-entries))
                              chord-semantics))
         (else (make-elements (map make-note-ev chord-entries) chord-semantics))))
-=======
-                             (cons (make-inverted original-inv-pitch 'inversion #t)
-                                   (append (if bass (list (make-note-ev bass 'bass #t)) '())
-                                           (map make-inverted invertible)
-                                           (map make-note-ev uninverted)
-                                           (map make-note-ev rest)))))))
-        (bass (cons (make-note-ev bass 'bass #t)
-                    (map make-note-ev pitches)))
-        (else (make-elements (map make-note-ev pitches) (make-chord-semantics-ev 'major 'C)))))
->>>>>>> Added ChordSemanticsEvent music type and chord-semantics-event event class
 
 ;;;;;;;;;;;;;;;;
 
