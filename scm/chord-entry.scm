@@ -69,7 +69,7 @@ Entry point for the parser."
                                            'removals
                                            (cons (pitch-step (car mods))
                                                  (get-chord-semantics chord-semantics 'removals)))
-                   (inner-interpret (remove-step (+ 1  (ly:pitch-steps (car mods))) chord)
+                   (inner-interpret (remove-step-chord-entries (+ 1  (ly:pitch-steps (car mods))) chord)
                                     (cdr mods)
                                     chord-semantics))
             (interpret-inversion chord-entries mods chord-semantics)))
@@ -89,7 +89,7 @@ Entry point for the parser."
                                      'additions
                                      (cons (pitch-step (car mods))
                                            (get-chord-semantics chord-semantics 'additions)))
-             (interpret-additions (cons (car mods) (remove-step (pitch-step (car mods)) chord-entries))
+             (interpret-additions (cons (car mods) (remove-step-chord-entries (pitch-step (car mods)) chord-entries))
                                   (cdr mods)
                                   chord-semantics))
             ((procedure? (car mods))
@@ -189,16 +189,16 @@ the bass specified.
     ;; we remove the 11.
     ;; TODO: make sure 11 is removed in this case.
     (if (and (not explicit-11)
-             (get-step 11 complete-chord)
-             (get-step 3 complete-chord)
-             (= 0 (ly:pitch-alteration (entry-pitch (get-step 11 complete-chord))))
-             (= 0 (ly:pitch-alteration (entry-pitch (get-step 3 complete-chord)))))
-        (set! complete-chord (remove-step 11 complete-chord)))
+             (get-step-chord-entry 11 complete-chord)
+             (get-step-chord-entry 3 complete-chord)
+             (= 0 (ly:pitch-alteration (entry-pitch (get-step-chord-entry 11 complete-chord))))
+             (= 0 (ly:pitch-alteration (entry-pitch (get-step-chord-entry 3 complete-chord)))))
+        (set! complete-chord (remove-step-chord-entries 11 complete-chord)))
     ;; if omit-3 has been set (and not reset by an explicit 3
     ;; somewhere), we remove the 3
     (if omit-3
         (begin
-          (set! complete-chord (remove-step 3 complete-chord))
+          (set! complete-chord (remove-step-chord-entries 3 complete-chord))
           (update-chord-semantics chord-semantics
                                   'removals
                                   (cons 3 (get-chord-semantics chord-semantics 'removals)))))
@@ -271,7 +271,7 @@ non-inverted note."
                                    (append (if bass (list (make-note-ev bass 'bass #t)) '())
                                            (map make-inverted invertible)
                                            (map make-note-ev uninverted)
-                                           (map make-note-ev rest)))))))
+                                           (map make-note-ev rest))))))
         (bass (cons (make-note-ev bass 'bass #t)
                     (map make-note-ev chord-entries)))
         (else (make-elements (map make-note-ev chord-entries) chord-semantics))))
@@ -309,24 +309,25 @@ non-inverted note."
                 chord-entries))
 
 (define (maj7-modifier chord-entries)
-  (set! chord-entries (remove-step 7 chord-entries))
+  (set! chord-entries (remove-step-chord-entries 7 chord-entries))
   (cons (make-chord-entry (ly:make-pitch 0 6 0)
                           (make-chord-step 7 'maj))
         chord-entries))
 
 (define (dim-modifier chord-entries)
   (set! chord-entries (replace-step (make-chord-entry (ly:make-pitch 0 2 FLAT)
-                                                (make-chord-step 3 'min))
-                              chord-entries)))
+                                                      (make-chord-step 3 'min))
+                                    chord-entries))
   (set! chord-entries (replace-step (make-chord-entry (ly:make-pitch 0 4 FLAT)
-                                                (make-chord-step 5 'dim))
-                              chord-entries))
-  (set! chord-entries (replace-step (make-chord-entry (ly:make-pitch 0 6 DOUBLE-FLAT)                                             (make-chord-step 7 'dim))
-                              chord-entries))
+                                                      (make-chord-step 5 'dim))
+                                    chord-entries))
+  (set! chord-entries (replace-step (make-chord-entry (ly:make-pitch 0 6 DOUBLE-FLAT)
+                                                      (make-chord-step 7 'dim))
+                                    chord-entries))
   chord-entries)
 
 (define (sus-modifier chord-entries)
-  (remove-step (pitch-step (ly:make-pitch 0 2 0)) chord-entries))
+  (remove-step-chord-entries (pitch-step (ly:make-pitch 0 2 0)) chord-entries))
 
 (define-safe-public default-chord-modifier-list
   `((m . ,minor-modifier)
@@ -346,36 +347,81 @@ non-inverted note."
 
 ;; Return pitch of a chord-entry
 (define (entry-pitch chord-entry)
-  (car (chord-entry)))
+  (newline) (display chord-entry) (newline)
+  (car chord-entry))
 
 ;; Return chord-step of chord-entry
 (define (entry-chord-step chord-entry)
-  (cdr entry))
+  (cdr chord-entry))
 
 ;; Make chord-entry out of pitch and chord-step
 (define (make-chord-entry pitch chord-step)
   (cons pitch chord-step))
 
 ;; Make chord-entry from just pitch
-;; TODO
+(define (make-chord-entry-from-pitch pitch)
+  (let* ((step-number (pitch-step pitch))
+         (alteration (ly:pitch-alteration pitch))
+         (quality 'maj))
+    (cond ((or (= step-number 2) (= step-number 9))
+           (cond ((= alteration SHARP) (set! quality 'aug))
+                 ((= alteration FLAT) (set! quality 'min))
+                 ((= alteration DOUBLE-FLAT) (set! quality 'dim))))
+          ((or (= step-number 3) (= step-number 10))
+           (cond ((= alteration SHARP) (set! quality 'aug))
+                 ((= alteration FLAT) (set! quality 'min))
+                 ((= alteration DOUBLE-FLAT) (set! quality 'dim))))
+          ((or (= step-number 4) (= step-number 11)) ;; TODO: will 11 have the same qualities as 4?
+           (cond ((= alteration 0) (set! quality 'perfect))
+                 ((= alteration SHARP) (set! quality 'aug))
+                 ((= alteration FLAT) (set! quality 'dim))))
+          ((or (= step-number 5) (= step-number 12))
+           (cond ((= alteration 0) (set! quality 'perfect))
+                 ((= alteration SHARP) (set! quality 'aug))
+                 ((= alteration FLAT) (set! quality 'dim))))
+          ((or (= step-number 6) (= step-number 13))
+           (cond ((= alteration SHARP) (set! quality 'aug))
+                 ((= alteration FLAT) (set! quality 'min))
+                 ((= alteration DOUBLE-FLAT) (set! quality 'dim))))
+          ((or (= step-number 1) (= step-number 8)) ;; TODO: define this better...
+           (cond ((= alteration 0) (set! quality 'perfect))
+                 ((= alteration SHARP) (set! quality 'aug))
+                 ((= alteration FLAT) (set! quality 'dim)))))
+    (make-chord-entry pitch (make-chord-step step-number quality))))
+
+;; Make single chord-step
+(define (make-chord-step number quality)
+  (list (cons 'step-number number) (cons 'step-quality quality)))
+
+;; make chord-step list used in canonical 13
+(define (make-chord-step-list chord-step-list step-number)
+  (define quality 'major)
+  (if (= step-number 1) (set! quality 'perfect))
+  (if (= step-number 5) (set! quality 'perfect))
+  (if (= step-number 7) (set! quality 'min))
+  (if (= step-number 15) (reverse chord-step-list)
+      (make-chord-step-list
+          (cons (list (cons 'step-number step-number) (cons 'step-quality quality)) chord-step-list)
+          (+ step-number 2))))
 
 ;; canonical 13 chord.
 (define the-canonical-chord
-  (map (lambda (n)
+  (map (lambda (chord-step)
          (define (nca x)
            (if (= x 7) FLAT 0))
-
+         (define n (assoc-ref chord-step 'step-number))
          (if (>= n 8)
-             (ly:make-pitch 1 (- n 8) (nca n))
-             (ly:make-pitch 0 (- n 1) (nca n))))
-       '(1 3 5 7 9 11 13)))
-
+             (make-chord-entry (ly:make-pitch 1 (- n 8) (nca n)) chord-step)
+             (make-chord-entry (ly:make-pitch 0 (- n 1) (nca n)) chord-step)))
+       (make-chord-step-list '() 1)
+         ))
+ 
 (define (stack-thirds upper-step base)
   "Stack thirds listed in BASE until we reach UPPER-STEP.  Add
 UPPER-STEP separately."
   (cond ((null? base) '())
-        ((> (ly:pitch-steps upper-step) (ly:pitch-steps (car base)))
+        ((> (ly:pitch-steps upper-step) (ly:pitch-steps (entry-pitch (car base))))
          (cons (car base) (stack-thirds upper-step (cdr base))))
-        ((<= (ly:pitch-steps upper-step) (ly:pitch-steps (car base)))
-         (list upper-step))
+        ((<= (ly:pitch-steps upper-step) (ly:pitch-steps (entry-pitch (car base))))
+         (list (make-chord-entry upper-step  (entry-chord-step (car base)))))
         (else '())))
