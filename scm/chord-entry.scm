@@ -187,6 +187,7 @@ the bass specified.
     (set! complete-chord (sort complete-chord chord-entry<?))
     ;; If natural 11 + natural 3 is present, but not given explicitly,
     ;; we remove the 11.
+    ;; TODO: make sure 11 is removed in this case.
     (if (and (not explicit-11)
              (get-step-chord-entry 11 complete-chord)
              (get-step-chord-entry 3 complete-chord)
