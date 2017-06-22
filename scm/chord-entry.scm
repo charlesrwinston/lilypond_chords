@@ -21,7 +21,7 @@
 (define-session-public chordmodifiers '())
 
 ;; TODO: probably make this local.
-(define chord-semantics '())
+;;(define chord-semantics '())
 
 (define-public (construct-chord-elements root duration modifications)
   "Build a chord on root using modifiers in @var{modifications}.
@@ -39,7 +39,10 @@ Entry point for the parser."
          (explicit-11 #f)
          (explicit-2/4 #f)
          (omit-3 #f)
-         (start-additions #t))
+         (start-additions #t)
+         (chord-semantics (list (cons 'quality 'maj) (cons 'root (ly:make-pitch 0 0 0))
+                                (cons 'extension #f) (cons 'additions '()) (cons 'removals '())
+                                )))
 
     (define (interpret-inversion chord mods)
       "Read /FOO part.  Side effect: INVERSION is set."
@@ -125,15 +128,11 @@ the bass specified.
             (cons down-inversion rest-of-chord)
             rest-of-chord)))
     ;; BEGINNING OF MAIN PROCEDURE
-    ;; Default chord semantics
-    (set! chord-semantics
-          (list (cons 'quality 'maj) (cons 'root (ly:make-pitch 0 0 0)) (cons 'extension #f)
-                (cons 'additions '()) (cons 'removals '())))
     ;; root is always one octave too low.
     ;; something weird happens when this is removed,
     ;; every other chord is octavated. --hwn... hmmm.
     (set! root (ly:pitch-transpose root (ly:make-pitch 1 0 0)))
-    (update-chord-semantics 'root root)
+    (set! chord-semantics (assoc-set! chord-semantics 'root root))
     ;; skip the leading : , we need some of the stuff following it.
     (if (pair? flat-mods)
         (if (eq? (car flat-mods) 'chord-colon)
@@ -155,11 +154,14 @@ the bass specified.
                  (set! omit-3 #t)))
           (set! base-chord
                 (stack-thirds (car flat-mods) the-canonical-chord))
-          (update-chord-semantics 'extension (pitch-step (car flat-mods)))
+          (set! chord-semantics (assoc-set! 'extension (pitch-step (car flat-mods))))
           (set! flat-mods (cdr flat-mods))))
     ;; apply modifier
     (if (procedure? lead-mod)
-        (set! base-chord (lead-mod base-chord)))
+        (begin
+          (set! base-chord (lead-mod base-chord))
+          (set! chord-semantics (assoc-set! 'quality (mod-quality lead-mod)))
+          (set! chord-semantics ))
     ;; interperet additions and removals
     (set! complete-chord
           (if start-additions
@@ -173,6 +175,7 @@ the bass specified.
     (set! complete-chord (sort complete-chord ly:pitch<?))
     ;; If natural 11 + natural 3 is present, but not given explicitly,
     ;; we remove the 11.
+    ;; TODO: make sure 11 is removed in this case.
     (if (and (not explicit-11)
              (get-step 11 complete-chord)
              (get-step 3 complete-chord)
@@ -251,9 +254,13 @@ non-inverted note."
 
 ;;;;;;;;;;;;;;;;
 
-;; update chord-semantics alist
-(define (update-chord-semantics key value)
-  (assoc-set! chord-semantics key value))
+;; get quality symbol from modifier
+(define (mod-quality lead-mod)
+  (cond ((eq? lead-mod aug-modifier) 'aug)
+        ((eq? lead-mod minor-modifier) 'min)
+        ((eq? lead-mod maj7-modifier) 'maj7)
+        ((eq? lead-mod dim-modifier) 'dim)
+        ((eq? lead-mod sus-modifier) 'sus)))
 
 ;; get value from key in chord-semantics
 (define (get-chord-semantics key)
@@ -261,28 +268,23 @@ non-inverted note."
 
 ;; chord modifiers change the pitch list.
 (define (aug-modifier pitches)
-  (update-chord-semantics 'quality 'aug)
   (set! pitches (replace-step (ly:make-pitch 0 4 SHARP) pitches))
   (replace-step (ly:make-pitch 0 2 0) pitches))
 
 (define (minor-modifier pitches)
-  (update-chord-semantics 'quality 'min)
   (replace-step (ly:make-pitch 0 2 FLAT) pitches))
 
 (define (maj7-modifier pitches)
-  (update-chord-semantics 'quality 'maj7)
   (set! pitches (remove-step 7 pitches))
   (cons (ly:make-pitch 0 6 0) pitches))
 
 (define (dim-modifier pitches)
-  (update-chord-semantics 'quality 'dim)
   (set! pitches (replace-step (ly:make-pitch 0 2 FLAT) pitches))
   (set! pitches (replace-step (ly:make-pitch 0 4 FLAT) pitches))
   (set! pitches (replace-step (ly:make-pitch 0 6 DOUBLE-FLAT) pitches))
   pitches)
 
 (define (sus-modifier pitches)
-  (update-chord-semantics 'quality 'sus)
   (remove-step (pitch-step (ly:make-pitch 0 2 0)) pitches))
 
 (define-safe-public default-chord-modifier-list
