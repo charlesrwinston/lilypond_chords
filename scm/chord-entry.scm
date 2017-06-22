@@ -20,8 +20,6 @@
 
 (define-session-public chordmodifiers '())
 
-;; TODO: probably make this local.
-;;(define chord-semantics '())
 
 (define-public (construct-chord-elements root duration modifications)
   "Build a chord on root using modifiers in @var{modifications}.
@@ -40,42 +38,46 @@ Entry point for the parser."
          (explicit-2/4 #f)
          (omit-3 #f)
          (start-additions #t)
-         (chord-semantics (list (cons 'quality 'maj) (cons 'root (ly:make-pitch 0 0 0))
-                                (cons 'extension #f) (cons 'additions '()) (cons 'removals '())
-                                )))
+         (chord-semantics `((modifier . #f) (root . ,(ly:make-pitch 0 0 0))
+                            (extension . #f) (additions . ()) (removals . ()))))
 
-    (define (interpret-inversion chord mods)
+    (define (interpret-inversion chord mods chord-semantics)
       "Read /FOO part.  Side effect: INVERSION is set."
       (if (and (> (length mods) 1) (eq? (car mods) 'chord-slash))
           (begin
             (set! inversion (cadr mods))
+            (update-chord-semantics chord-semantics 'bass inversion)
             (set! mods (cddr mods))))
-      (interpret-bass chord mods))
+      (interpret-bass chord mods chord-semantics))
 
-    (define (interpret-bass chord mods)
+    (define (interpret-bass chord mods chord-semantics)
       "Read /+FOO part.  Side effect: BASS is set."
       (if (and (> (length mods) 1) (eq? (car mods) 'chord-bass))
           (begin
             (set! bass (cadr mods))
+            (update-chord-semantics chord-semantics 'bass bass)
             (set! mods (cddr mods))))
       (if (pair? mods)
           (ly:parser-error
            (format #f (_ "Spurious garbage following chord: ~A") mods)))
       chord)
 
-    (define (interpret-removals  chord mods)
-      (define (inner-interpret chord mods)
+    (define (interpret-removals  chord mods chord-semantics)
+      (define (inner-interpret chord mods chord-semantics)
         (if (and (pair? mods) (ly:pitch? (car mods)))
-            (begin (update-chord-semantics
-                      'removals (cons (pitch-step (car mods)) (get-chord-semantics 'removals)))
+            (begin (update-chord-semantics chord-semantics
+                                           'removals
+                                           (cons (pitch-step (car mods))
+                                                 (get-chord-semantics chord-semantics 'removals)))
                    (inner-interpret (remove-step (+ 1  (ly:pitch-steps (car mods))) chord)
-                                    (cdr mods)))
-            (interpret-inversion chord mods)))
+                                    (cdr mods)
+                                    chord-semantics))
+            (interpret-inversion chord mods chord-semantics)))
       (if (and (pair? mods) (eq? (car mods) 'chord-caret))
           (inner-interpret chord (cdr mods))
           (interpret-inversion chord mods)))
 
-    (define (interpret-additions chord mods)
+    (define (interpret-additions chord mods chord-semantics)
       "Interpret additions.  TODO: should restrict modifier use?"
       (cond ((null? mods) chord)
             ((ly:pitch? (car mods))
@@ -83,14 +85,18 @@ Entry point for the parser."
                ((11) (set! explicit-11 #t))
                ((2 4) (set! explicit-2/4 #t))
                ((3) (set! omit-3 #f)))
-             (update-chord-semantics
-                'additions (cons (pitch-step (car mods)) (get-chord-semantics 'additions)))
+             (update-chord-semantics chord-semantics
+                                     'additions
+                                     (cons (pitch-step (car mods))
+                                           (get-chord-semantics chord-semantics 'additions)))
              (interpret-additions (cons (car mods) (remove-step (pitch-step (car mods)) chord))
-                                  (cdr mods)))
+                                  (cdr mods)
+                                  chord-semantics))
             ((procedure? (car mods))
              (interpret-additions ((car mods) chord)
-                                  (cdr mods)))
-            (else (interpret-removals chord mods))))
+                                  (cdr mods)
+                                  (chord-semantics)))
+            (else (interpret-removals chord mods chord-semantics))))
 
     (define (pitch-octavated-strictly-below p root)
       "return P, but octavated, so it is below ROOT"
@@ -101,7 +107,7 @@ Entry point for the parser."
                      (ly:pitch-notename p)
                      (ly:pitch-alteration p)))
 
-    (define (process-inversion complete-chord)
+    (define (process-inversion complete-chord chord-semantics)
       "Take out inversion from COMPLETE-CHORD, and put it at the bottom.
 Return (INVERSION . REST-OF-CHORD).
 
@@ -125,14 +131,16 @@ the bass specified.
               (set! bass inversion)
               (set! inversion #f)))
         (if inversion
-            (cons down-inversion rest-of-chord)
+            (begin
+              (update-chord-semantics chord-semantics 'bass down-inversion
+              (cons down-inversion rest-of-chord)))
             rest-of-chord)))
     ;; BEGINNING OF MAIN PROCEDURE
     ;; root is always one octave too low.
     ;; something weird happens when this is removed,
     ;; every other chord is octavated. --hwn... hmmm.
     (set! root (ly:pitch-transpose root (ly:make-pitch 1 0 0)))
-    (set! chord-semantics (assoc-set! chord-semantics 'root root))
+    (update-chord-semantics chord-semantics 'root root)
     ;; skip the leading : , we need some of the stuff following it.
     (if (pair? flat-mods)
         (if (eq? (car flat-mods) 'chord-colon)
@@ -150,25 +158,26 @@ the bass specified.
         (begin
           (cond ((= (pitch-step (car flat-mods)) 11)
                  (set! explicit-11 #t))
+                ;; TODO: this omits 3 in power chord. Change to only do so if lead-mod is null.
                 ((equal? (ly:make-pitch 0 4 0) (car flat-mods))
                  (set! omit-3 #t)))
           (set! base-chord
                 (stack-thirds (car flat-mods) the-canonical-chord))
-          (set! chord-semantics (assoc-set! 'extension (pitch-step (car flat-mods))))
+          (update-chord-semantics chord-semantics 'extension (pitch-step (car flat-mods)))
           (set! flat-mods (cdr flat-mods))))
     ;; apply modifier
     (if (procedure? lead-mod)
         (begin
           (set! base-chord (lead-mod base-chord))
-          (set! chord-semantics (assoc-set! 'quality (mod-quality lead-mod)))
-          (set! chord-semantics ))
+          (update-chord-semantics chord-semantics 'modifier (mod-symbol lead-mod))))
     ;; interperet additions and removals
     (set! complete-chord
           (if start-additions
-              (interpret-additions base-chord flat-mods)
-              (interpret-removals base-chord flat-mods)))
+              (interpret-additions base-chord flat-mods chord-semantics)
+              (interpret-removals base-chord flat-mods chord-semantics)))
     ;; if sus has been given neither 2 or 4, we add 4.
     ;; TODO: how to deal with sus semantics with 2 and 4
+    ;; TODO: is this right?? It looks like it adds the fifth.
     (if (and (eq? lead-mod sus-modifier)
              (not explicit-2/4))
         (set! complete-chord (cons (ly:make-pitch 0 4 0) complete-chord)))
@@ -185,15 +194,21 @@ the bass specified.
     ;; if omit-3 has been set (and not reset by an explicit 3
     ;; somewhere), we remove the 3
     (if omit-3
-        (set! complete-chord (remove-step 3 complete-chord)))
+        (begin
+          (set! complete-chord (remove-step 3 complete-chord))
+          (update-chord-semantics chord-semantics
+                                  'removals
+                                  (cons 3 (get-chord-semantics chord-semantics 'removals)))))
     ;; must do before processing inversion/bass, since they are
     ;; not relative to the root.
     (set! complete-chord (map (lambda (x) (ly:pitch-transpose x root))
                               complete-chord))
-    (if inversion
-        (set! complete-chord (process-inversion complete-chord)))
+    (if inversion    
+        (set! complete-chord (process-inversion complete-chord chord-semantics)))
     (if bass
-        (set! bass (pitch-octavated-strictly-below bass root)))
+        (begin
+          (set! bass (pitch-octavated-strictly-below bass root))
+          (update-chord-semantics chord-semantics 'bass bass)))
     (if #f
         (begin
           (write-me "\n*******\n" flat-mods)
@@ -204,11 +219,11 @@ the bass specified.
           (write-me "bass: " bass)))
     (if inversion
         (make-chord-elements (cdr complete-chord) bass duration (car complete-chord)
-                             inversion)
-        (make-chord-elements complete-chord bass duration #f #f))))
+                             inversion chord-semantics)
+        (make-chord-elements complete-chord bass duration #f #f chord-semantics))))
 
 
-(define (make-chord-elements pitches bass duration inversion original-inv-pitch)
+(define (make-chord-elements pitches bass duration inversion original-inv-pitch chord-semantics)
   "Make EventChord with notes corresponding to PITCHES, BASS and
 DURATION, and INVERSION.  Notes above INVERSION are transposed downward
 along with the inversion as long as they end up below at least one
@@ -218,11 +233,11 @@ non-inverted note."
            'duration duration
            'pitch pitch
            rest))
-  (define make-chord-semantics-ev
+  (define (make-chord-semantics-ev chord-semantics)
     (make-music 'ChordSemanticsEvent
                 'chord-semantics chord-semantics))
-  (define (make-elements note-events)
-    (cons make-chord-semantics-ev note-events))
+  (define (make-elements note-events chord-semantics)
+    (cons (make-chord-semantics-ev chord-semantics) note-events))
   (cond (inversion
          (let* ((octavation (- (ly:pitch-octave inversion)
                                (ly:pitch-octave original-inv-pitch)))
@@ -250,21 +265,25 @@ non-inverted note."
                                            (map make-note-ev rest)))))))
         (bass (cons (make-note-ev bass 'bass #t)
                     (map make-note-ev pitches)))
-        (else (make-elements (map make-note-ev pitches)))))
+        (else (make-elements (map make-note-ev pitches) chord-semantics))))
 
 ;;;;;;;;;;;;;;;;
 
-;; get quality symbol from modifier
-(define (mod-quality lead-mod)
+;; get symbol from modifier
+(define (mod-symbol lead-mod)
   (cond ((eq? lead-mod aug-modifier) 'aug)
         ((eq? lead-mod minor-modifier) 'min)
         ((eq? lead-mod maj7-modifier) 'maj7)
         ((eq? lead-mod dim-modifier) 'dim)
         ((eq? lead-mod sus-modifier) 'sus)))
 
+;; update chord-semantics list
+(define (update-chord-semantics semantics-list key value)
+  (assoc-set! semantics-list key value))
+
 ;; get value from key in chord-semantics
-(define (get-chord-semantics key)
-  (assoc-ref chord-semantics key))
+(define (get-chord-semantics semantics-list key)
+  (assoc-ref semantics-list key))
 
 ;; chord modifiers change the pitch list.
 (define (aug-modifier pitches)
