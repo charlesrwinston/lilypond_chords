@@ -62,20 +62,20 @@ Entry point for the parser."
            (format #f (_ "Spurious garbage following chord: ~A") mods)))
       chord-entries)
 
-    (define (interpret-removals  chord-entries mods chord-semantics)
+    (define (interpret-removals chord-entries mods chord-semantics)
       (define (inner-interpret chord-entries mods chord-semantics)
         (if (and (pair? mods) (ly:pitch? (car mods)))
             (begin (update-chord-semantics chord-semantics
                                            'removals
                                            (cons (pitch-step (car mods))
                                                  (get-chord-semantics chord-semantics 'removals)))
-                   (inner-interpret (remove-step-chord-entries (+ 1  (ly:pitch-steps (car mods))) chord)
+                   (inner-interpret (remove-step-chord-entries (+ 1  (ly:pitch-steps (car mods))) chord-entries)
                                     (cdr mods)
                                     chord-semantics))
             (interpret-inversion chord-entries mods chord-semantics)))
       (if (and (pair? mods) (eq? (car mods) 'chord-caret))
-          (inner-interpret chord-entries (cdr mods))
-          (interpret-inversion chord-entries mods)))
+          (inner-interpret chord-entries (cdr mods) chord-semantics)
+          (interpret-inversion chord-entries mods chord-semantics)))
 
     (define (interpret-additions chord-entries mods chord-semantics)
       "Interpret additions.  TODO: should restrict modifier use?"
@@ -89,7 +89,8 @@ Entry point for the parser."
                                      'additions
                                      (cons (pitch-step (car mods))
                                            (get-chord-semantics chord-semantics 'additions)))
-             (interpret-additions (cons (car mods) (remove-step-chord-entries (pitch-step (car mods)) chord-entries))
+             (interpret-additions (cons (make-chord-entry-from-pitch (car mods))
+                                        (remove-step-chord-entries (pitch-step (car mods)) chord-entries))
                                   (cdr mods)
                                   chord-semantics))
             ((procedure? (car mods))
@@ -132,8 +133,8 @@ the bass specified.
               (set! inversion #f)))
         (if inversion
             (begin
-              (update-chord-semantics chord-semantics 'bass down-inversion
-              (cons down-inversion rest-of-chord)))
+              (update-chord-semantics chord-semantics 'bass down-inversion)
+              (cons down-inversion rest-of-chord))
             rest-of-chord)))
     ;; BEGINNING OF MAIN PROCEDURE
     ;; root is always one octave too low.
@@ -181,7 +182,7 @@ the bass specified.
     (if (and (eq? lead-mod sus-modifier)
              (not explicit-2/4))
         (set! complete-chord (cons (make-chord-entry (ly:make-pitch 0 4 0)
-                                                     '(4 . 'perfect))
+                                                     (make-chord-step 4 'perfect))
                                    complete-chord)))
     ;; sort the notes in the chord
     (set! complete-chord (sort complete-chord chord-entry<?))
@@ -248,8 +249,9 @@ non-inverted note."
                                (ly:pitch-octave (entry-pitch original-inv-pitch))))
                 (down (ly:make-pitch octavation 0 0))
                 (inv-semantics (entry-chord-step original-inv-pitch)))
-           (define (invert-chord-entry p) (make-chord-entry (ly:pitch-transpose down (entry-pitch p))
-                                                            (entry-chord-step p))))
+           (define (invert-chord-entry p)
+             (make-chord-entry (ly:pitch-transpose down (entry-pitch p))
+                               (entry-chord-step p)))
            (define (make-inverted p . rest)
              (apply make-note-ev (invert-chord-entry p) 'octavation octavation rest))
            (receive (uninverted high)
@@ -267,13 +269,15 @@ non-inverted note."
                                          (ly:pitch<? (entry-pitch (invert-chord-entry p))
                                                      (entry-pitch (car uninverted))))
                                        high))
-                             (cons (make-inverted original-inv-pitch 'inversion #t)
-                                   (append (if bass (list (make-note-ev bass 'bass #t)) '())
-                                           (map make-inverted invertible)
-                                           (map make-note-ev uninverted)
-                                           (map make-note-ev rest))))))
-        (bass (cons (make-note-ev bass 'bass #t)
-                    (map make-note-ev chord-entries)))
+                             (make-elements (cons (make-inverted original-inv-pitch 'inversion #t)
+                                                  (append (if bass (list (make-note-ev bass 'bass #t)) '())
+                                                          (map make-inverted invertible)
+                                                          (map make-note-ev uninverted)
+                                                          (map make-note-ev rest)))
+                                            chord-semantics)))))
+        (bass (make-elements (cons (make-note-ev bass 'bass #t)
+                                   (map make-note-ev chord-entries))
+                             chord-semantics))
         (else (make-elements (map make-note-ev chord-entries) chord-semantics))))
 
 ;;;;;;;;;;;;;;;;
@@ -347,7 +351,6 @@ non-inverted note."
 
 ;; Return pitch of a chord-entry
 (define (entry-pitch chord-entry)
-  (newline) (display chord-entry) (newline)
   (car chord-entry))
 
 ;; Return chord-step of chord-entry
