@@ -312,6 +312,11 @@ work than classifying the pitches."
                   (set! main-name (last alterations))
                   (set! alterations '())))
 
+            ;; DEBUG
+            (newline) (display "HERE RIGHT HERE") (newline)
+            (display (ignatzek-format-chord-name
+                       root prefixes main-name alterations add-steps suffixes bass-note
+                       lowercase-root?))
             (ignatzek-format-chord-name
                        root prefixes main-name alterations add-steps suffixes bass-note
                        lowercase-root?))))))
