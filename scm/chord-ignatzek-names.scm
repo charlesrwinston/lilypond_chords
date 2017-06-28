@@ -349,7 +349,8 @@ work than classifying the pitches."
                          x))
            additions))
     (if additions
-        (make-super-markup (make-line-markup (additions-markup-list additions)))
+        (make-super-markup (markup-join (additions-markup-list additions)
+                                        (ly:context-property context 'chordNameSeparator)))
         empty-markup))
   
   (define (make-removals-markup removals)
@@ -365,9 +366,9 @@ work than classifying the pitches."
          (additions-markup (make-additions-markup additions))
          (removals-markup (make-removals-markup removals)))
     (make-line-markup
-     (list
-      (make-root-markup root)
-      (make-modifier-markup modifier)
-      (make-extension-markup extension)
-      (make-additions-markup additions)
-      (make-removals-markup removals)))))
+      (list
+       (make-root-markup root)
+       (make-modifier-markup modifier)
+       (make-extension-markup extension)
+       (make-additions-markup additions)
+       (make-removals-markup removals)))))
