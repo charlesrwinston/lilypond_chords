@@ -324,6 +324,11 @@ work than classifying the pitches."
 
 ;; CHANGE BACK
 (define-public (ignatzek-chord-names chord-semantics context)
+  (define (glue-word-to-step word x)
+      (make-line-markup
+       (list
+        (make-simple-markup word)
+        (make-simple-markup (number->string (pitch-step x))))))
   ;; TODO include (and figure out) lower-case root
   (define (make-root-markup root)
     ((ly:context-property context 'chordRootNamer) root #f))
@@ -335,10 +340,18 @@ work than classifying the pitches."
         empty-markup))
   (define (make-extension-markup extension)
     (if extension
-        (make-simple-markup (number->string extension))
+        (make-super-markup (number->string extension))
         empty-markup))
   (define (make-additions-markup additions)
-    empty-markup)    
+    (define (additions-markup-list additions)
+      (map (lambda (x) (glue-word-to-step
+                         (ly:context-property context 'additionalPitchPrefix)
+                         x))
+           additions))
+    (if additions
+        (make-super-markup (make-line-markup (additions-markup-list additions)))
+        empty-markup))
+  
   (define (make-removals-markup removals)
     empty-markup)
   (let* ((root (assoc-ref chord-semantics 'root))
