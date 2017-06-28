@@ -339,7 +339,7 @@ work than classifying the pitches."
         empty-markup))
   (define (make-extension-markup extension)
     (if extension
-        (make-simple-markup (number->string extension))
+        (make-super-markup (number->string extension))
         empty-markup))
   (define (make-additions-markup additions)
     (define (additions-markup-list additions)
