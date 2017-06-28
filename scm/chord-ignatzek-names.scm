@@ -87,8 +87,8 @@
             t
             (cons (car ps) t)))))
 
-
-(define-public (ignatzek-chord-names
+;; CHANGE BACK
+(define-public (ignatzek-chord-games
                 in-pitches bass inversion
                 context)
 
@@ -313,6 +313,48 @@ work than classifying the pitches."
                   (set! main-name (last alterations))
                   (set! alterations '())))
 
+            ;; DEBUG
+            (newline) (display "HERE RIGHT HERE") (newline)
+            (display (ignatzek-format-chord-name
+                       root prefixes main-name alterations add-steps suffixes bass-note
+                       lowercase-root?))
             (ignatzek-format-chord-name
-             root prefixes main-name alterations add-steps suffixes bass-note
-             lowercase-root?))))))
+                       root prefixes main-name alterations add-steps suffixes bass-note
+                       lowercase-root?))))))
+
+;; CHANGE BACK
+(define-public (ignatzek-chord-names chord-semantics context)
+  ;; TODO include (and figure out) lower-case root
+  (define (make-root-markup root)
+    ((ly:context-property context 'chordRootNamer) root #f))
+  (define (make-modifier-markup modifier)
+    (if modifier
+        (cond ((eq? modifier 'min) (make-simple-markup "m"))
+              ((eq? modifier 'maj7) (ly:context-property context 'majorSevenSymbol))
+              (else (make-simple-markup (symbol->string modifier))))
+        empty-markup))
+  (define (make-extension-markup extension)
+    (if extension
+        (make-simple-markup (number->string extension))
+        empty-markup))
+  (define (make-additions-markup additions)
+    empty-markup)    
+  (define (make-removals-markup removals)
+    empty-markup)
+  (let* ((root (assoc-ref chord-semantics 'root))
+         (modifier (assoc-ref chord-semantics 'modifier))
+         (extension (assoc-ref chord-semantics 'extension))
+         (additions (assoc-ref chord-semantics 'additions))
+         (removals (assoc-ref chord-semantics 'removals))
+         (root-markup (make-root-markup root))
+         (modifier-markup (make-modifier-markup modifier))
+         (extension-markup (make-extension-markup extension))
+         (additions-markup (make-additions-markup additions))
+         (removals-markup (make-removals-markup removals)))
+    (make-line-markup
+     (list
+      (make-root-markup root)
+      (make-modifier-markup modifier)
+      (make-extension-markup extension)
+      (make-additions-markup additions)
+      (make-removals-markup removals)))))

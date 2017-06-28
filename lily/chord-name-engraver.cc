@@ -44,7 +44,7 @@ protected:
   void listen_chord_semantics (Stream_event *);
 private:
   vector<Stream_event *> notes_;
-
+  Stream_event *chord_semantics_event_;
   Stream_event *rest_event_;
 };
 
@@ -57,6 +57,7 @@ Chord_name_engraver::Chord_name_engraver (Context *c)
   : Engraver (c)
 {
   rest_event_ = 0;
+  chord_semantics_event_ = 0;
 }
 
 void
@@ -69,6 +70,7 @@ Chord_name_engraver::process_music ()
   SCM bass = SCM_EOL;
   SCM inversion = SCM_EOL;
   SCM pitches = SCM_EOL;
+  SCM semantics = SCM_EOL;
   Item *chord_name = 0;
 
   // rest events present a hen-and-egg problem with regard to
@@ -83,6 +85,25 @@ Chord_name_engraver::process_music ()
         return;
       markup = no_chord_markup;
       chord_name = make_item ("ChordName", rest_event_->self_scm ());
+      chord_name->set_property ("text", markup);
+    }
+  else if (chord_semantics_event_)
+    {
+      chord_name = make_item ("ChordName", chord_semantics_event_->self_scm ());
+      // We cannot actually delay fetching the text property in case
+      // it is a callback since we need to compare the generated
+      // markups for the sake of chordChanges
+      markup = chord_name->get_property ("text");
+      semantics = chord_semantics_event_->get_property ("chord-semantics");
+
+      SCM name_proc = get_property ("chordNameFunction");
+      markup = scm_call_2 (name_proc, semantics, context ()->self_scm ());
+      if (!Text_interface::is_markup (markup))
+        {
+          // Ugh, we created a grob, now we better populate it.
+          // Use an empty string.
+          markup = scm_string (SCM_EOL);
+        }
       chord_name->set_property ("text", markup);
     }
   else
@@ -160,7 +181,7 @@ Chord_name_engraver::listen_rest (Stream_event *ev)
 void
 Chord_name_engraver::listen_chord_semantics (Stream_event *ev)
 {
-  (void) ev;
+  ASSIGN_EVENT_ONCE (chord_semantics_event_, ev);
 }
 
 void
@@ -168,6 +189,7 @@ Chord_name_engraver::stop_translation_timestep ()
 {
   notes_.clear ();
   rest_event_ = 0;
+  chord_semantics_event_ = 0;
 }
 
 /*
