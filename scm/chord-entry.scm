@@ -39,7 +39,8 @@ Entry point for the parser."
          (omit-3 #f)
          (start-additions #t)
          (chord-semantics `((modifier . #f) (root . ,(ly:make-pitch 0 0 0))
-                            (extension . #f) (additions . ()) (removals . ()))))
+                            (extension . #f) (additions . ()) (removals . ())
+                            (bass . #f))))
 
     (define (interpret-inversion chord-entries mods chord-semantics)
       "Read /FOO part.  Side effect: INVERSION is set."
@@ -87,7 +88,7 @@ Entry point for the parser."
                ((3) (set! omit-3 #f)))
              (update-chord-semantics chord-semantics
                                      'additions
-                                     (cons (pitch-step (car mods))
+                                     (cons (car mods)
                                            (get-chord-semantics chord-semantics 'additions)))
              (interpret-additions (cons (make-chord-entry-from-pitch (car mods))
                                         (remove-step-chord-entries (pitch-step (car mods)) chord-entries))
@@ -212,7 +213,7 @@ the bass specified.
     (if bass
         (begin
           (set! bass (make-chord-entry (pitch-octavated-strictly-below bass root) 'bass))
-          (update-chord-semantics chord-semantics 'bass bass)))
+          (update-chord-semantics chord-semantics 'bass (entry-pitch bass))))
     ;; DEBUG STATEMENT
     (if #f
         (begin
