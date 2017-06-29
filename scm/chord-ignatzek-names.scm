@@ -312,11 +312,6 @@ work than classifying the pitches."
                   (set! main-name (last alterations))
                   (set! alterations '())))
 
-            ;; DEBUG
-            (newline) (display "HERE RIGHT HERE") (newline)
-            (display (ignatzek-format-chord-name
-                       root prefixes main-name alterations add-steps suffixes bass-note
-                       lowercase-root?))
             (ignatzek-format-chord-name
                        root prefixes main-name alterations add-steps suffixes bass-note
                        lowercase-root?))))))
@@ -339,7 +334,7 @@ work than classifying the pitches."
         empty-markup))
   (define (make-extension-markup extension)
     (if extension
-        (make-super-markup (number->string extension))
+        (make-simple-markup (number->string extension))
         empty-markup))
   (define (make-additions-markup additions)
     (define (additions-markup-list additions)

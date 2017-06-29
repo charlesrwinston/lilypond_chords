@@ -177,8 +177,6 @@ the bass specified.
               (interpret-additions base-chord flat-mods chord-semantics)
               (interpret-removals base-chord flat-mods chord-semantics)))
     ;; if sus has been given neither 2 or 4, we add 4.
-    ;; TODO: how to deal with sus semantics with 2 and 4
-    ;; TODO: is this right?? It looks like it adds the fifth.
     (if (and (eq? lead-mod sus-modifier)
              (not explicit-2/4))
         (set! complete-chord (cons (make-chord-entry (ly:make-pitch 0 4 0)
@@ -188,7 +186,6 @@ the bass specified.
     (set! complete-chord (sort complete-chord chord-entry<?))
     ;; If natural 11 + natural 3 is present, but not given explicitly,
     ;; we remove the 11.
-    ;; TODO: make sure 11 is removed in this case.
     (if (and (not explicit-11)
              (get-step-chord-entry 11 complete-chord)
              (get-step-chord-entry 3 complete-chord)
