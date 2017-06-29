@@ -199,6 +199,8 @@ of pitches to chord names.")
      (chordNameLowercaseMinor ,boolean? "Downcase roots of minor chords?")
      (chordNameSeparator ,markup? "The markup object used to
 separate parts of a chord name.")
+     (chordSemanticsNameFunction ,procedure? "The function that converts
+the chord-semantics-event to a chord name")
      (slashChordSeparator ,markup? "The markup object used to separate
 a chord name from its root note in case of inversions or slash
 chords.")

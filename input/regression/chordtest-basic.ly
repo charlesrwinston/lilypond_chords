@@ -12,22 +12,7 @@
 
 \new Staff {
     \new Voice {
-         #(display "\nNO MODS\n")
-    	 \displayMusic \chords { f1 }
-
-	 #(display "\nSIMPLE MODS\n")
-	 #(display "Minor:\n")
-   	 \displayMusic \chords { f1:m }
-	 #(display "Minor 7:\n")
-    	 \displayMusic \chords { f1:m7 }
-	 #(display "Diminished:\n")
-    	 \displayMusic \chords { f1:dim }
-	 #(display "Diminished 7:\n")
-    	 \displayMusic \chords { f1:dim7 }
-         #(display "Augmented:\n")
-    	 \displayMusic \chords { f1:aug }
-	 #(display "Major 7:\n")
-    	 \displayMusic \chords { f1:maj7 }
+    	 \chords { f1 g1:m a1:m7 b1:dim c1:dim7 d1:aug e1:maj7 }
     
     }
 }

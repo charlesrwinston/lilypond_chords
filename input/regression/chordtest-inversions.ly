@@ -12,8 +12,7 @@
 
 \new Staff {
     \new Voice {
-         #(display "\nINVERSIONS:\n")
-    	 \displayMusic \chordmode { f1/c f/a f/f' }
+    	 \chords { f1/c f/a f/f' }
     
     }
 }

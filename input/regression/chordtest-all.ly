@@ -1,4 +1,4 @@
-% chordtest-sus.ly
+% chordtest-all.ly
 % Testing semantic properties of NoteEvents in EventChords.
 %
 % Charles Winston
@@ -7,11 +7,11 @@
 \version "2.18.62"
 
 \header {
-        title = "Chord Test Sus"
+        title = "Chord Test All"
 }
 
 \new Staff {
     \new Voice {
-         \chords { f1:sus f:sus2 f:sus4 f:sus2.4 }
+         \chords { f1:m7.9.6.13^3/c c:maj7.9.6.13^3/f }
     }
 }
