@@ -68,7 +68,7 @@ Entry point for the parser."
         (if (and (pair? mods) (ly:pitch? (car mods)))
             (begin (update-chord-semantics chord-semantics
                                            'removals
-                                           (cons (pitch-step (car mods))
+                                           (cons (car mods)
                                                  (get-chord-semantics chord-semantics 'removals)))
                    (inner-interpret (remove-step-chord-entries (+ 1  (ly:pitch-steps (car mods))) chord-entries)
                                     (cdr mods)
@@ -178,8 +178,6 @@ the bass specified.
               (interpret-additions base-chord flat-mods chord-semantics)
               (interpret-removals base-chord flat-mods chord-semantics)))
     ;; if sus has been given neither 2 or 4, we add 4.
-    ;; TODO: how to deal with sus semantics with 2 and 4
-    ;; TODO: is this right?? It looks like it adds the fifth.
     (if (and (eq? lead-mod sus-modifier)
              (not explicit-2/4))
         (set! complete-chord (cons (make-chord-entry (ly:make-pitch 0 4 0)
@@ -189,7 +187,6 @@ the bass specified.
     (set! complete-chord (sort complete-chord chord-entry<?))
     ;; If natural 11 + natural 3 is present, but not given explicitly,
     ;; we remove the 11.
-    ;; TODO: make sure 11 is removed in this case.
     (if (and (not explicit-11)
              (get-step-chord-entry 11 complete-chord)
              (get-step-chord-entry 3 complete-chord)
@@ -214,6 +211,7 @@ the bass specified.
         (begin
           (set! bass (make-chord-entry (pitch-octavated-strictly-below bass root) 'bass))
           (update-chord-semantics chord-semantics 'bass (entry-pitch bass))))
+    (sort-chord-semantics chord-semantics)
     ;; DEBUG STATEMENT
     (if #f
         (begin
@@ -298,6 +296,15 @@ non-inverted note."
 ;; get value from key in chord-semantics
 (define (get-chord-semantics semantics-list key)
   (assoc-ref semantics-list key))
+
+;; sorts additions and removals entries of chord-semantics
+(define (sort-chord-semantics chord-semantics)
+  (update-chord-semantics chord-semantics
+                          'additions
+                          (sort (get-chord-semantics chord-semantics 'additions) ly:pitch<?))
+  (update-chord-semantics chord-semantics
+                          'removals
+                          (sort (get-chord-semantics chord-semantics 'removals) ly:pitch<?)))
 
 ;; chord modifiers change the pitch list.
 (define (aug-modifier chord-entries)

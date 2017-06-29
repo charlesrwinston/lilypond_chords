@@ -710,6 +710,7 @@ automatically when an output definition (a @code{\\score} or
 
   %% chord names:
   chordNameFunction = #ignatzek-chord-names
+  chordSemanticsNameFunction = #semantic-chord-names
   minorChordModifier = #(make-simple-markup "m")
   additionalPitchPrefix = #"" % was "add"
   majorSevenSymbol = #whiteTriangleMarkup

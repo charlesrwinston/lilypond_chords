@@ -12,8 +12,7 @@
 
 \new Staff {
     \new Voice {
-         #(display "\nBASS:\n")
-    	 \displayMusic \chordmode { f1/g f/b f/d f/e }
+    	 \chords { f1/g f/b f/d f/e }
     
     }
 }
