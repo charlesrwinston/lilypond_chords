@@ -96,7 +96,7 @@ Chord_name_engraver::process_music ()
       markup = chord_name->get_property ("text");
       semantics = chord_semantics_event_->get_property ("chord-semantics");
 
-      SCM name_proc = get_property ("chordNameFunction");
+      SCM name_proc = get_property ("chordSemanticsNameFunction");
       markup = scm_call_2 (name_proc, semantics, context ()->self_scm ());
       if (!Text_interface::is_markup (markup))
         {

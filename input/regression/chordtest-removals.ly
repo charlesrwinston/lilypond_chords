@@ -12,9 +12,8 @@
 
 \new Staff {
     \new Voice {
-         #(display "\nREMOVALS:\n")
-    	 \displayMusic \chordmode { f1:13^1 f:13^1.3 f:13^1.3.5 f:13^1.3.5.7
-	                            f:13^1.3.5.7.9 f:13^1.3.5.7.9.13}
+    	 \chords { f1:13^1 f:13^1.3 f:13^1.3.5 f:13^1.3.5.7
+	           f:13^1.3.5.7.9 f:13^1.3.5.7.9.13}
     
     }
 }

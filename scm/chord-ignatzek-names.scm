@@ -87,8 +87,7 @@
             t
             (cons (car ps) t)))))
 
-;; CHANGE BACK
-(define-public (ignatzek-chord-games
+(define-public (ignatzek-chord-names
                 in-pitches bass inversion
                 context)
 
@@ -313,23 +312,18 @@ work than classifying the pitches."
                   (set! main-name (last alterations))
                   (set! alterations '())))
 
-            ;; DEBUG
-            (newline) (display "HERE RIGHT HERE") (newline)
-            (display (ignatzek-format-chord-name
-                       root prefixes main-name alterations add-steps suffixes bass-note
-                       lowercase-root?))
             (ignatzek-format-chord-name
                        root prefixes main-name alterations add-steps suffixes bass-note
                        lowercase-root?))))))
 
-;; CHANGE BACK
-(define-public (ignatzek-chord-names chord-semantics context)
+
+(define-public (semantic-chord-names chord-semantics context)
   (define (glue-word-to-step word x)
       (make-line-markup
        (list
         (make-simple-markup word)
         (make-simple-markup (number->string (pitch-step x))))))
-  ;; TODO include (and figure out) lower-case root
+  ;; TODO include (and figure out) lower-case root?
   (define (make-root-markup root)
     ((ly:context-property context 'chordRootNamer) root #f))
   (define (make-modifier-markup modifier)
@@ -340,7 +334,7 @@ work than classifying the pitches."
         empty-markup))
   (define (make-extension-markup extension)
     (if extension
-        (make-super-markup (number->string extension))
+        (make-simple-markup (number->string extension))
         empty-markup))
   (define (make-additions-markup additions)
     (define (additions-markup-list additions)
@@ -349,26 +343,44 @@ work than classifying the pitches."
                          x))
            additions))
     (if additions
-        (make-super-markup (markup-join (additions-markup-list additions)
-                                        (ly:context-property context 'chordNameSeparator)))
+        (additions-markup-list additions)
         empty-markup))
   
   (define (make-removals-markup removals)
     empty-markup)
+  (define (make-bass-markup bass)
+    (if bass
+        (list (ly:context-property context 'slashChordSeparator)
+              ((ly:context-property context 'chordRootNamer) bass #f))
+        '()))
   (let* ((root (assoc-ref chord-semantics 'root))
          (modifier (assoc-ref chord-semantics 'modifier))
          (extension (assoc-ref chord-semantics 'extension))
          (additions (assoc-ref chord-semantics 'additions))
          (removals (assoc-ref chord-semantics 'removals))
+         (bass (assoc-ref chord-semantics 'bass))
+         
          (root-markup (make-root-markup root))
          (modifier-markup (make-modifier-markup modifier))
          (extension-markup (make-extension-markup extension))
+         (alterations-markup empty-markup) ;; TODO
          (additions-markup (make-additions-markup additions))
-         (removals-markup (make-removals-markup removals)))
-    (make-line-markup
-      (list
-       (make-root-markup root)
-       (make-modifier-markup modifier)
-       (make-extension-markup extension)
-       (make-additions-markup additions)
-       (make-removals-markup removals)))))
+         (removals-markup (make-removals-markup removals)) ;; TODO include this
+         (bass-markup (make-bass-markup bass))
+         
+         (sep (ly:context-property context 'chordNameSeparator))
+         (add-pitch-prefix (ly:context-property context 'additionalPitchPrefix))
+         (super-markups (markup-join
+                          (append 
+                           (list extension-markup)
+                           (list alterations-markup)
+                           additions-markup) sep))
+         (total-markup (append
+                         (list root-markup
+                               (conditional-kern-before modifier-markup
+                                                        (and (not (eq? modifier-markup empty-markup))
+                                                             (= (ly:pitch-alteration root) NATURAL))
+                                                        (ly:context-property context 'chordPrefixSpacer))
+                               (make-super-markup super-markups))
+                         bass-markup)))
+    (make-line-markup total-markup)))
