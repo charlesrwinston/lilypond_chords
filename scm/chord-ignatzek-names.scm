@@ -322,7 +322,10 @@ work than classifying the pitches."
       (make-line-markup
        (list
         (make-simple-markup word)
+<<<<<<< HEAD
         (accidental->markup (ly:pitch-alteration x))
+=======
+>>>>>>> 478b455960df22570cd3522d7d9c91aac5192902
         (make-simple-markup (number->string (pitch-step x))))))
   ;; TODO include (and figure out) lower-case root?
   (define (make-root-markup root)
