@@ -12,7 +12,10 @@
 
 \new Staff {
     \new Voice {
-	 \chords { c1:7 f:7.13.9.11 g:6.9.2.10 }
+	 \new ChordNames {
+	      \set additionalPitchPrefix = #"add"
+	      \chordmode { c1:7 f:7.13.9.11 g:6.9.2.10 }
+	 }
     
     }
 }
