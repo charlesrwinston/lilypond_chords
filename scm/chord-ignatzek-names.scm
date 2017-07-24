@@ -331,6 +331,7 @@ work than classifying the pitches."
     (if modifier
         (cond ((eq? modifier 'min) (make-simple-markup "m"))
               ((eq? modifier 'maj7) (ly:context-property context 'majorSevenSymbol))
+              ((eq? modifier 'sus) (make-super-markup "sus"))
               (else (make-simple-markup (symbol->string modifier))))
         empty-markup))
   (define (make-extension-markup extension)
@@ -346,15 +347,24 @@ work than classifying the pitches."
     (if additions
         (additions-markup-list additions)
         empty-markup))
-  
+  ;; TODO: make this more customizable
   (define (make-removals-markup removals)
-    empty-markup)
+    (define (removals-markup-list removals)
+      (map (lambda (x) (glue-word-to-step
+                         "omit"
+                         x))
+           removals))
+    (if removals
+        (removals-markup-list removals)
+        empty-markup))
   (define (make-bass-markup bass)
     (if bass
         (list (ly:context-property context 'slashChordSeparator)
               ((ly:context-property context 'chordRootNamer) bass #f))
         '()))
-  (let* ((root (assoc-ref chord-semantics 'root))
+  (let* ((sep (ly:context-property context 'chordNameSeparator))
+
+         (root (assoc-ref chord-semantics 'root))
          (modifier (assoc-ref chord-semantics 'modifier))
          (extension (assoc-ref chord-semantics 'extension))
          (additions (assoc-ref chord-semantics 'additions))
@@ -365,19 +375,21 @@ work than classifying the pitches."
          (modifier-markup (make-modifier-markup modifier))
          (extension-markup (make-extension-markup extension))
          (alterations-markup empty-markup) ;; TODO
+         ;;(main-markup (make-line-markup (list modifier-markup extension-markup)))
          (additions-markup (make-additions-markup additions))
          (removals-markup (make-removals-markup removals)) ;; TODO include this
          (bass-markup (make-bass-markup bass))
          
-         (sep (ly:context-property context 'chordNameSeparator))
          (add-pitch-prefix (ly:context-property context 'additionalPitchPrefix))
          (super-markups (markup-join
                           (append 
                            (list extension-markup)
                            (list alterations-markup)
+                           removals-markup
                            additions-markup) sep))
          (total-markup (append
                          (list root-markup
+                               ;;main-markup
                                (conditional-kern-before modifier-markup
                                                         (and (not (eq? modifier-markup empty-markup))
                                                              (= (ly:pitch-alteration root) NATURAL))
