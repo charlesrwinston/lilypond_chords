@@ -329,8 +329,10 @@ work than classifying the pitches."
     ((ly:context-property context 'chordRootNamer) root #f))
   (define (make-modifier-markup modifier)
     (if modifier
-        (cond ((eq? modifier 'min) (make-simple-markup "m"))
-              ((eq? modifier 'maj7) (ly:context-property context 'majorSevenSymbol))
+        (cond ((eq? modifier 'min) (ly:context-property context 'minorChordModifier)) ;; TODO: lowercase root
+              ((eq? modifier 'maj7) (make-super-markup (ly:context-property context 'majorSevenSymbol)))
+              ((eq? modifier 'dim) (make-super-markup "o"))
+              ((eq? modifier 'aug) (make-musicglyph-markup "plus"))
               ((eq? modifier 'sus) (make-super-markup "sus"))
               (else (make-simple-markup (symbol->string modifier))))
         empty-markup))
