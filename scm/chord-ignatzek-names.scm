@@ -349,11 +349,10 @@ work than classifying the pitches."
     (if additions
         (additions-markup-list additions)
         empty-markup))
-  ;; TODO: make this more customizable
   (define (make-removals-markup removals)
     (define (removals-markup-list removals)
       (map (lambda (x) (glue-word-to-step
-                         "omit"
+                         (ly:context-property context 'removalPitchPrefix)
                          x))
            removals))
     (if removals
