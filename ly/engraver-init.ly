@@ -713,6 +713,7 @@ automatically when an output definition (a @code{\\score} or
   chordSemanticsNameFunction = #semantic-chord-names
   minorChordModifier = #(make-simple-markup "m")
   additionalPitchPrefix = #"" % was "add"
+  removalPitchPrefix = #"omit"
   majorSevenSymbol = #whiteTriangleMarkup
   chordNameLowercaseMinor = ##f
   chordNameSeparator = #(make-hspace-markup 0.5)

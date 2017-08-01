@@ -750,7 +750,8 @@ event types that should be duplicated for @code{\\quoteDuring} commands.
 This is also a fallback for @code{\\cueDuring} if @code{quotedCueEventTypes}
 is not set")
 
-
+     (removalPitchPrefix ,string? "Text with which to prefix
+removal pitches within a chord name.")
      (rootSystem ,ly:grob? "The System object.")
 
 
