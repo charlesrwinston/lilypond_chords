@@ -324,7 +324,7 @@ work than classifying the pitches."
         (make-simple-markup word)
         (accidental->markup (ly:pitch-alteration x))
         (make-simple-markup (number->string (pitch-step x))))))
-  ;; TODO include (and figure out) lower-case root?
+  ;; TODO include lower-case root
   (define (make-root-markup root)
     ((ly:context-property context 'chordRootNamer) root #f))
   (define (make-modifier-markup modifier)
@@ -363,9 +363,9 @@ work than classifying the pitches."
         (list (ly:context-property context 'slashChordSeparator)
               ((ly:context-property context 'chordRootNamer) bass #f))
         '()))
-  (let* ((sep (ly:context-property context 'chordNameSeparator))
-
-         (root (assoc-ref chord-semantics 'root))
+  (define (semantic-format-exception root-markup exception-markup bass-markup)
+    (make-line-markup (list root-markup exception-markup bass-markup)))
+  (let* ((root (assoc-ref chord-semantics 'root))
          (modifier (assoc-ref chord-semantics 'modifier))
          (extension (assoc-ref chord-semantics 'extension))
          (additions (assoc-ref chord-semantics 'additions))
@@ -375,12 +375,15 @@ work than classifying the pitches."
          (root-markup (make-root-markup root))
          (modifier-markup (make-modifier-markup modifier))
          (extension-markup (make-extension-markup extension))
-         (alterations-markup empty-markup) ;; TODO
-         ;;(main-markup (make-line-markup (list modifier-markup extension-markup)))
+         (alterations-markup empty-markup) ;; TODO: does this need to be included?
          (additions-markup (make-additions-markup additions))
          (removals-markup (make-removals-markup removals)) ;; TODO include this
          (bass-markup (make-bass-markup bass))
-         
+
+         (exceptions (ly:context-property context 'chordNameExceptions))
+         (exception #f) ;;(assoc-get pitches exceptions)) TODO: create own semantics exceptions
+
+         (sep (ly:context-property context 'chordNameSeparator))
          (add-pitch-prefix (ly:context-property context 'additionalPitchPrefix))
          (super-markups (markup-join
                           (append 
@@ -397,4 +400,6 @@ work than classifying the pitches."
                                                         (ly:context-property context 'chordPrefixSpacer))
                                (make-super-markup super-markups))
                          bass-markup)))
-    (make-line-markup total-markup)))
+    (if exception
+        (semantics-format-exception root-markup exception bass-markup)
+        (make-line-markup total-markup))))
