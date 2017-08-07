@@ -1,4 +1,4 @@
-;;;; This file is part of LilyPond, the GNU music typesetter.
+/;;;; This file is part of LilyPond, the GNU music typesetter.
 ;;;;
 ;;;; Copyright (C) 1998--2015  Han-Wen Nienhuys <hanwen@xs4all.nl>
 ;;;;                  Jan Nieuwenhuizen <janneke@gnu.org>
@@ -189,6 +189,8 @@ to make beats.")
      (chordChanges ,boolean? "Only show changes in chords scheme?")
      (chordNameExceptions ,list? "An alist of chord exceptions.
 Contains @code{(@var{chord} . @var{markup})} entries.")
+     (chordSemanticsNameExceptions ,list? "An alist of chord exceptions.
+Contains @code{(@var{chord-semantics} . @var{markup})} entries.")
      (chordNameExceptionsFull ,list? "An alist of full chord
 exceptions.  Contains @code{(@var{chord} . @var{markup})} entries.")
      (chordNameExceptionsPartial ,list? "An alist of partial chord
