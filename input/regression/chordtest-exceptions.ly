@@ -11,14 +11,10 @@
 }
 
 % Event Chord
-chordVar = {
-    \chordmode { c1:m7 }
-}
+chordVar = \chordmode { c1:m7 }
 
 % Markup
-markupVar = {
-   \markup { "min7" }
-}
+markupVar = \markup { \super "min7" }
 
 % Convert music to list, prepend to previous exceptions
 chExceptions = #(append (chordmode-to-exceptions chordVar markupVar) ignatzekExceptions)
