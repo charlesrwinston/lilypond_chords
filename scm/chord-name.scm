@@ -183,6 +183,6 @@ entry in chordSemanticsNameExceptions list
            (semantics-event (filter is-semantics-event? elts))
            (semantics-list (ly:event-property semantics-event 'chord-semantics)))
       semantics-list))
-  (cons (get-semantics chord) markup))
+  (list (cons (get-semantics chord) markup)))
   
       

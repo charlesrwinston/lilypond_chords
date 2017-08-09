@@ -63,3 +63,5 @@ powerChordExceptions =
 
 ignatzekExceptions  =
 #(sequential-music-to-chord-exceptions ignatzekExceptionMusic #t)
+
+semanticExceptions = #'()
