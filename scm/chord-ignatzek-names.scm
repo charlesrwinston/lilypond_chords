@@ -363,8 +363,8 @@ work than classifying the pitches."
         (list (ly:context-property context 'slashChordSeparator)
               ((ly:context-property context 'chordRootNamer) bass #f))
         '()))
-  (define (semantic-format-exception root-markup exception-markup bass-markup)
-    (make-line-markup (list root-markup exception-markup bass-markup)))
+  (define (semantics-format-exception root-markup exception-markup bass-markup)
+    (make-line-markup (append (list root-markup exception-markup) bass-markup)))
   (let* ((root (assoc-ref chord-semantics 'root))
          (modifier (assoc-ref chord-semantics 'modifier))
          (extension (assoc-ref chord-semantics 'extension))
@@ -381,7 +381,7 @@ work than classifying the pitches."
          (bass-markup (make-bass-markup bass))
 
          (exceptions (ly:context-property context 'chordNameExceptions))
-         (exception #f) ;;(assoc-get pitches exceptions)) TODO: create own semantics exceptions
+         (exception (assoc-get chord-semantics exceptions))
 
          (sep (ly:context-property context 'chordNameSeparator))
          (add-pitch-prefix (ly:context-property context 'additionalPitchPrefix))
