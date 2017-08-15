@@ -176,13 +176,22 @@ FOOBAR-MARKUP) if OMIT-ROOT is given and non-false.
   "Transform event-chord entered in chord mode to alist
 entry in chordSemanticsNameExceptions list
 "
-  (define (is-semantics-event? x)
-    (ly:in-event-class? x 'chord-semantics-event))
+  ;;(define (is-semantics-event? x)
+  ;;  (ly:in-event-class? x 'chord-semantics-event))
   (define (get-semantics chord)
-    (let* ((elts (ly:music-property chord 'elements))
-           (semantics-event (filter is-semantics-event? elts))
-           (semantics-list (ly:event-property semantics-event 'chord-semantics)))
+    (begin
+      (display "\nin get-semantics\n")
+      (display "chord\n")
+      (display chord)(newline)
+      (display "element\n")
+      (display (ly:music-property chord 'element))(newline)
+      (display "correct elements\n")
+      (display (ly:music-property (ly:music-property chord 'element) 'elements))(newline))
+    (let* ((elt (ly:music-property chord 'element))
+           (elts1 (ly:music-property elt 'elements))
+           (elts2 (ly:music-property elts1 'elements))
+           (semantics-list (ly:music-property elts1 'chord-semantics)))
       semantics-list))
-  (list (cons (get-semantics chord) markup)))
+  (cons (get-semantics chord) markup))
   
       

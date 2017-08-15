@@ -11,16 +11,23 @@
 }
 
 % Event Chord
-%chordVar = \chordmode { c1:m7 }
-chordVar = <c e g>
+chordVar = \chordmode { c1:m7 }
 
 % Markup
 markupVar = \markup { \super "min7" }
 
-% Convert music to list, prepend to previous exceptions
-%chExceptions = #(append (chordmode-to-exceptions chordVar markupVar) semanticsExceptions)
 
-\displayMusic #(chordmode-to-exceptions chordVar markupVar)
+%#(begin (display "chordVar\n")
+%	(display chordVar) (newline)
+%	(display "markupVar\n")
+%	(display markupVar) (newline)
+%	(display "chord-to-exceptions\n")
+%	(display (chordmode-to-exceptions chordVar markupVar)))
+
+#(chordmode-to-exceptions chordVar markupVar)
+
+% Convert music to list, prepend to previous exceptions
+% chExceptions = #(cons (chordmode-to-exceptions chordVar markupVar) semanticsExceptions)
 
 \new Staff {
     \new Voice {
