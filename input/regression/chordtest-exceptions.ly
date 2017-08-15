@@ -12,6 +12,7 @@
 
 % Event Chord
 chordVar = \chordmode { c1:m7 }
+\displayMusic \chordVar
 
 % Markup
 markupVar = \markup { \super "min7" }
