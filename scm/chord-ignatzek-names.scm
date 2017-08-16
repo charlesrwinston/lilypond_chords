@@ -380,7 +380,7 @@ work than classifying the pitches."
          (removals-markup (make-removals-markup removals)) ;; TODO include this
          (bass-markup (make-bass-markup bass))
 
-         (exceptions (ly:context-property context 'chordNameExceptions))
+         (exceptions (ly:context-property context 'chordSemanticsNameExceptions))
          (exception (assoc-get chord-semantics exceptions))
 
          (sep (ly:context-property context 'chordNameSeparator))
