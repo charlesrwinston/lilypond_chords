@@ -598,6 +598,23 @@ pitches this can be visually effective.
 }
 @end lilypond
 
+@funindex removalPitchPrefix
+
+@item removalPitchPrefix
+
+When the chord name contains removed pitches, they can, like additions,
+be prefixed with some text.  The default is ``omit'', but can be changed
+to any string. Removals only register when chords are entered in
+@code{\chordmode}.
+
+@lilypond[verbatim,quote,ragged-right]
+\new ChordNames {
+  \chordmode { c1:m7^5 }   % remove 5
+  \set removalPitchPrefix = #"no"
+  \chordmode { c1:m7^5 }   % remove 5
+}
+@end lilypond
+
 @funindex chordNoteNamer
 
 @item chordNoteNamer
