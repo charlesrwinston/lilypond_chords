@@ -173,13 +173,30 @@ FOOBAR-MARKUP) if OMIT-ROOT is given and non-false.
 
 ;; chordmode->exception-entry
 (define-safe-public (chordmode->exception-entry chord markup)
-  "Transform event-chord entered in chord mode to alist
+  "Transform event-chord entered in chordmode to alist
 entry in chordSemanticsNameExceptions list
 "
+  (define (is-event-chord? m)
+    (and
+     (memq 'event-chord (ly:music-property m 'types))
+     (not (equal? ZERO-MOMENT (ly:music-length m)))))
+  (define (has-semantics? m)
+    (not (eq? (ly:music-property m 'chord-semantics) '())))
+  
   (define (get-semantics chord)
     (let* ((elt (ly:music-property chord 'element))
            (elts1 (ly:music-property elt 'elements))
+           (event-chord (music-filter has-semantics? chord))
            (elts2 (ly:music-property (car elts1) 'elements))
+           (semantics-list-alt (ly:music-property event-chord 'chord-semantics))
            (semantics-list (ly:music-property (car elts2) 'chord-semantics)))
-      semantics-list))
+      ;;semantics-list-alt))
+      ;;semantics-list))
+      (display "\nelt\n") (display elt)
+      (display "\nelts1\n") (display elts1)
+      (display "\nelts2\n") (display elts2)
+      (display "\n(car elts2)\n") (display (car elts2))
+      (display "\nEvent Chord\n") (display event-chord)
+      (display "\nSemantics-list\n") (display semantics-list)
+      (display "\nSemantics-list-alt\n") (display semantics-list-alt)))
   (list (cons (get-semantics chord) markup)))
