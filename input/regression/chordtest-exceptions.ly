@@ -22,9 +22,9 @@ chExceptions = #(append (chordmode->exception-entry chordVar markupVar) semantic
 \new Staff {
     \new Voice {
     	 \chords {
-	     c1:m7
+	     c1:m7 g:m7
     	     \set chordSemanticsNameExceptions = #chExceptions
-    	     c1:m7
+    	     c1:m7 g:m7
 	 }
     }
 }
