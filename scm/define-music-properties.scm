@@ -66,7 +66,7 @@ TODO: Use SpanEvents?")
 cautionary accidental.")
      (change-to-id ,string? "Name of the context to change to.")
      (change-to-type ,symbol? "Type of the context to change to.")
-     (chord-step ,pair? "The step of a note relative to the root in EventChord, contains step number and quality."
+     (chord-step ,pair? "The step of a note relative to the root in EventChord, contains step number and quality.")
      (class ,symbol? "The class name of an event class.")
      (context ,ly:context? "The context to which an event is sent.")
      (context-change-list ,list? "Context changes for @code{\\autochange} or @code{\\partcombine}.")

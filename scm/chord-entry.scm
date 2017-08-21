@@ -196,10 +196,7 @@ the bass specified.
     ;; somewhere), we remove the 3
     (if omit-3
         (begin
-          (set! complete-chord (remove-step-chord-entries 3 complete-chord))
-          (update-chord-semantics chord-semantics
-                                  'removals
-                                  (cons 3 (get-chord-semantics chord-semantics 'removals)))))
+          (set! complete-chord (remove-step-chord-entries 3 complete-chord))))
     ;; must do before processing inversion/bass, since they are
     ;; not relative to the root.
     (set! complete-chord (map (lambda (x) (chord-pitch-transpose x root))
