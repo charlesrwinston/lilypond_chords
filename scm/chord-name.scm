@@ -171,6 +171,14 @@ FOOBAR-MARKUP) if OMIT-ROOT is given and non-false.
          (alist (map chord-to-exception-entry elts)))
     (filter cdr alist)))
 
+;; semantics procedures
+(define-public (get-modifications-from-semantics semantics-list)
+  (define (not-root-entry? pair)
+    (not (eq? (car pair) 'root)))
+  (filter not-root-entry? semantics-list))
+(define-public (get-root-from-semantics semantics-list)
+  (assoc-ref 'root semantics-list))
+
 ;; chordmode->exception-entry
 (define-safe-public (chordmode->exception-entry chord markup)
   "Transform event-chord entered in chordmode to alist
@@ -198,4 +206,5 @@ entry in chordSemanticsNameExceptions list
     (let* ((semantics-event (get-semantics-event chord))
            (semantics-list (ly:music-property semantics-event 'chord-semantics)))
       semantics-list))
-  (list (cons (get-semantics-list chord) markup)))
+  (list (cons (get-modifications-from-semantics (get-semantics-list chord))
+              markup)))

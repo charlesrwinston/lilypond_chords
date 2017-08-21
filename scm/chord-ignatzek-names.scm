@@ -381,7 +381,9 @@ work than classifying the pitches."
          (bass-markup (make-bass-markup bass))
 
          (exceptions (ly:context-property context 'chordSemanticsNameExceptions))
-         (exception (assoc-get chord-semantics exceptions))
+         (exception (assoc-get
+                     (get-modifications-from-semantics chord-semantics)
+                     exceptions))
 
          (sep (ly:context-property context 'chordNameSeparator))
          (add-pitch-prefix (ly:context-property context 'additionalPitchPrefix))
