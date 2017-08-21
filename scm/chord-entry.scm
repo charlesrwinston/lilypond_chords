@@ -228,10 +228,8 @@ the bass specified.
 
 
 (define (make-chord-elements chord-entries bass duration inversion original-inv-pitch chord-semantics)
-  "Make EventChord with notes corresponding to PITCHES, BASS and
-DURATION, and INVERSION.  Notes above INVERSION are transposed downward
-along with the inversion as long as they end up below at least one
-non-inverted note."
+  "Make EventChord with notes corresponding to PITCHES, DURATION
+CHORD-STEP, and SEMANTICS."
   (define (make-note-ev chord-entry . rest)
     (apply make-music 'NoteEvent
            'chord-step (entry-chord-step chord-entry)
