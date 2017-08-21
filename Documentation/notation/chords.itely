@@ -410,15 +410,19 @@ Chord names are printed in the @code{ChordNames} context:
 @end lilypond
 
 Chords can be entered as simultaneous notes or through the use of
-chord mode.  The displayed chord name will be the same, regardless
-of the mode of entry, unless there are inversions or added bass notes:
+chord mode.  Depending on the mode of entry, the displayed name may be
+different.  When entered in chord mode, the name will be produced based
+on the semantics of the chord, the structure indicated in chord mode.
+When entered in note mode, the name will be produced based only on the
+pitches themselves. Note mode is more prone to ambiguity in naming
+and so when using the ChordNames context it is reccomended to use chord
+mode:
 
 @lilypond[verbatim,quote]
 chordmusic = \relative {
-  <c' e g>2 <f bes c>
-  <f c' e g>1
+  <ees g bes>2 <ees g bes>
   \chordmode {
-    c2 f:sus4 c1:/f
+    c:m7^1 ees
   }
 }
 <<
@@ -675,6 +679,16 @@ The second item is a markup that will follow the @code{chordRootNamer}
 output to create the chord name. This is only defined for chords entered
 in note mode.
 
+@funindex chordSemanticsNameExceptions
+
+@item chordSemanticsNameExceptions
+
+Like chordNameExceptions, this property is also a list of pairs, but defined
+only for chords entered in @code{\chordmode}. The first item in each pair is
+the chord-semantics list, with the root entry omitted, used to identify the
+semantics of the structure of the chord independent from root. The second item
+is a markup that will follow the @code{chordRootNamer}.
+
 @funindex minorChordModifier
 
 @item minorChordModifier
@@ -725,6 +739,9 @@ used when the root is altered.
 @cindex exceptions, chord names.
 @lilypondfile[verbatim,quote,texidoc,doctitle]
 {chord-name-exceptions.ly}
+
+@lilypondfile[verbatim,quote,texidoc,doctitle]
+{chord-semantics-name-exceptions.ly}
 
 @c TODO - tweak snippet to use \blackTriangleMarkup as well
 @lilypondfile[verbatim,quote,texidoc,doctitle]

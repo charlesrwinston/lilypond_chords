@@ -2,7 +2,8 @@
 \header {
 
     texidoc = "The property @code{chordNameExceptions} can used
-    to store a list of special notations for specific chords."
+    to store a list of special notations for specific chords
+    entered in note mode."
 
 }
 
@@ -16,10 +17,10 @@ chExceptions = #(append
 		 (sequential-music-to-chord-exceptions chExceptionMusic #t)
 		 ignatzekExceptions)
 
-theMusic = \chordmode {
-    c:7sus4 c:dim7/+f
+theMusic = \relative {
+    <c f g bes>1 <g c' d' f'>
     \set chordNameExceptions = #chExceptions
-    c:7sus4 c:dim7/+f
+    <c f g bes>1 <g c' d' f'>
 }
 
 \layout { ragged-right = ##t }
