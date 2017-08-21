@@ -672,7 +672,8 @@ change it to any markup you choose.
 This property is a list of pairs.  The first item in each pair
 is a set of pitches used to identify the steps present in the chord.
 The second item is a markup that will follow the @code{chordRootNamer}
-output to create the chord name.
+output to create the chord name. This is only defined for chords entered
+in note mode.
 
 @funindex minorChordModifier
 
