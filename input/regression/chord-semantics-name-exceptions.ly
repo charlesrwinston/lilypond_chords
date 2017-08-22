@@ -14,13 +14,13 @@ chordVar = \chordmode { c1:m7 }
 markupVar = \markup { \super "min7" }
 
 % Convert music to list, prepend to previous exceptions
-chExceptions = #(append (chordmode->exception-entry chordVar markupVar) semanticExceptions)
+chExceptions = #(append (chordmode->exception-entry chordVar markupVar) ignatzekExceptions)
 
 \new Staff {
     \new Voice {
     	 \chords {
 	     c1:m7 g:m7
-    	     \set chordSemanticsNameExceptions = #chExceptions
+    	     \set chordNameExceptions = #chExceptions
     	     c1:m7 g:m7
 	 }
     }

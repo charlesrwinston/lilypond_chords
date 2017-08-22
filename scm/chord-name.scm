@@ -182,7 +182,7 @@ FOOBAR-MARKUP) if OMIT-ROOT is given and non-false.
 ;; chordmode->exception-entry
 (define-safe-public (chordmode->exception-entry chord markup)
   "Transform event-chord entered in chordmode to alist
-entry in chordSemanticsNameExceptions list
+entry in chordNameExceptions list
 "
   (define (get-semantics-list chord)
     (define (get-semantics-event music)
