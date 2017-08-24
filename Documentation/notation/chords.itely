@@ -415,7 +415,7 @@ different.  When entered in chord mode, the name will be produced based
 on the semantics of the chord, the structure indicated in chord mode.
 When entered in note mode, the name will be produced based only on the
 pitches themselves. Note mode is more prone to ambiguity in naming
-and so when using the ChordNames context it is reccomended to use chord
+and so when using the ChordNames context it is recommended to use chord
 mode:
 
 @lilypond[verbatim,quote]
@@ -673,21 +673,13 @@ change it to any markup you choose.
 
 @item chordNameExceptions
 
-This property is a list of pairs.  The first item in each pair
-is a set of pitches used to identify the steps present in the chord.
-The second item is a markup that will follow the @code{chordRootNamer}
-output to create the chord name. This is only defined for chords entered
-in note mode.
-
-@funindex chordSemanticsNameExceptions
-
-@item chordSemanticsNameExceptions
-
-Like chordNameExceptions, this property is also a list of pairs, but defined
-only for chords entered in @code{\chordmode}. The first item in each pair is
-the chord-semantics list, with the root entry omitted, used to identify the
-semantics of the structure of the chord independent from root. The second item
-is a markup that will follow the @code{chordRootNamer}.
+This property is a list of pairs used to map chords to markups.
+The first item in each pair identifies the chord. When the chord
+is entered in chord mode, this item is a list of semantics which
+represent the structure of the chord. When entered in node mode,
+this item is a set of pitches used to identify the steps present
+in the chord. The second item is a markup that will follow the
+@code{chordRootNamer} output to create the chord name.
 
 @funindex minorChordModifier
 
@@ -739,9 +731,6 @@ used when the root is altered.
 @cindex exceptions, chord names.
 @lilypondfile[verbatim,quote,texidoc,doctitle]
 {chord-name-exceptions.ly}
-
-@lilypondfile[verbatim,quote,texidoc,doctitle]
-{chord-semantics-name-exceptions.ly}
 
 @c TODO - tweak snippet to use \blackTriangleMarkup as well
 @lilypondfile[verbatim,quote,texidoc,doctitle]

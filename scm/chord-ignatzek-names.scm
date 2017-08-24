@@ -375,7 +375,6 @@ work than classifying the pitches."
          (root-markup (make-root-markup root))
          (modifier-markup (make-modifier-markup modifier))
          (extension-markup (make-extension-markup extension))
-         (alterations-markup empty-markup) ;; TODO: does this need to be included?
          (additions-markup (make-additions-markup additions))
          (removals-markup (make-removals-markup removals)) ;; TODO include this
          (bass-markup (make-bass-markup bass))
@@ -390,7 +389,6 @@ work than classifying the pitches."
          (super-markups (markup-join
                           (append 
                            (list extension-markup)
-                           (list alterations-markup)
                            removals-markup
                            additions-markup) sep))
          (total-markup (append
