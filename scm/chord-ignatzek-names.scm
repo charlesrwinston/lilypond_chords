@@ -325,17 +325,19 @@ work than classifying the pitches."
         (accidental->markup (ly:pitch-alteration x))
         (make-simple-markup (number->string (pitch-step x))))))
   ;; TODO include lower-case root
-  (define (make-root-markup root)
-    ((ly:context-property context 'chordRootNamer) root #f))
-  (define (make-modifier-markup modifier)
-    (if modifier
-        (cond ((eq? modifier 'min) (ly:context-property context 'minorChordModifier)) ;; TODO: lowercase root
-              ((eq? modifier 'maj7) (make-super-markup (ly:context-property context 'majorSevenSymbol)))
-              ((eq? modifier 'dim) (make-super-markup "o"))
-              ((eq? modifier 'aug) (make-musicglyph-markup "plus"))
-              ((eq? modifier 'sus) (make-super-markup "sus"))
-              (else (make-simple-markup (symbol->string modifier))))
-        empty-markup))
+  (define (make-root-markup root lowercase-root?)
+    ((ly:context-property context 'chordRootNamer) root lowercase-root?))
+  (define (make-modifier-markup modifier lowercase-root?)
+    (if lowercase-root?
+        empty-markup
+        (if modifier
+            (cond ((eq? modifier 'min) (ly:context-property context 'minorChordModifier)) ;; TODO: lowercase root
+                  ((eq? modifier 'maj7) (make-super-markup (ly:context-property context 'majorSevenSymbol)))
+                  ((eq? modifier 'dim) (make-super-markup "o"))
+                  ((eq? modifier 'aug) (make-musicglyph-markup "plus"))
+                  ((eq? modifier 'sus) (make-super-markup "sus"))
+                  (else (make-simple-markup (symbol->string modifier))))
+            empty-markup)))
   (define (make-extension-markup extension)
     (if extension
         (make-simple-markup (number->string extension))
@@ -371,12 +373,15 @@ work than classifying the pitches."
          (additions (assoc-ref chord-semantics 'additions))
          (removals (assoc-ref chord-semantics 'removals))
          (bass (assoc-ref chord-semantics 'bass))
+
+         (lowercase-root? (and (ly:context-property context 'chordNameLowercaseMinor)
+                          (eq? modifier 'min)))
          
-         (root-markup (make-root-markup root))
-         (modifier-markup (make-modifier-markup modifier))
+         (root-markup (make-root-markup root lowercase-root?))
+         (modifier-markup (make-modifier-markup modifier lowercase-root?))
          (extension-markup (make-extension-markup extension))
          (additions-markup (make-additions-markup additions))
-         (removals-markup (make-removals-markup removals)) ;; TODO include this
+         (removals-markup (make-removals-markup removals))
          (bass-markup (make-bass-markup bass))
 
          (exceptions (ly:context-property context 'chordNameExceptions))
